@@ -45,7 +45,7 @@ dependencies = [
     "statsmodels>=0.14,<1",
 
     # ── Technical Indicators ──────────────────────────────────
-    "pandas-ta>=0.3.14b0",
+    "pandas-ta>=0.4.71b0",
 
     # ── ML ────────────────────────────────────────────────────
     "scikit-learn>=1.4,<2",
