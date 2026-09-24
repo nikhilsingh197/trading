@@ -376,21 +376,30 @@ def backtest(symbols: str, timeframe: str, capital: float, strategy: str, monte_
     )
     from ai_crypto_trader.features.feature_engine import FeatureEngine
     from ai_crypto_trader.ingestion.parquet_store import ParquetStore
-    from ai_crypto_trader.strategies.trend_following import EMACrossoverStrategy
+    from ai_crypto_trader.strategies import (
+        BollingerRSIMeanReversion,
+        DonchianBreakoutStrategy,
+        EMACrossoverStrategy,
+        MultiTimeframeTrendStrategy,
+        StrategyEnsemble,
+    )
 
     settings = get_settings()
     configure_logging(settings.app_log_level)
 
-    symbol_list = [s.strip().replace("/", "").replace("-", "").upper() for s in symbols.split(",") if s.strip()]
-    pstore = ParquetStore(settings.data_raw_dir)
-
     strategy_map = {
         "EMA_Crossover": EMACrossoverStrategy,
+        "Mean_Reversion": BollingerRSIMeanReversion,
+        "Breakout": DonchianBreakoutStrategy,
+        "MTF_Trend": MultiTimeframeTrendStrategy,
+        "Ensemble": StrategyEnsemble,
     }
     if strategy not in strategy_map:
         console.print(f"[red]Unknown strategy: {strategy}. Available: {list(strategy_map.keys())}[/red]")
         sys.exit(1)
 
+    symbol_list = [s.strip().replace("/", "").replace("-", "").upper() for s in symbols.split(",") if s.strip()]
+    pstore = ParquetStore(settings.data_raw_dir)
     feature_engine = FeatureEngine()
     datasets: dict[str, pd.DataFrame] = {}
 
