@@ -513,6 +513,162 @@ def backtest(symbols: str, timeframe: str, capital: float, strategy: str, monte_
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# VALIDATE COMMAND
+# ─────────────────────────────────────────────────────────────────────────────
+
+@main.command()
+@click.option("--symbol", default="BTCUSDT", help="Symbol to validate")
+@click.option("--timeframe", default="1h", help="Timeframe")
+@click.option("--strategy", default="EMA_Crossover", help="Strategy to evaluate")
+@click.option("--windows", default=4, type=int, help="Number of rolling walk-forward windows")
+def validate(symbol: str, timeframe: str, strategy: str, windows: int) -> None:
+    """Run mandatory walk-forward validation and parameter stability checks."""
+    import pandas as pd
+    from ai_crypto_trader.config.settings import get_settings
+    from ai_crypto_trader.core.logging import configure_logging
+    from ai_crypto_trader.features.feature_engine import FeatureEngine
+    from ai_crypto_trader.ingestion.parquet_store import ParquetStore
+    from ai_crypto_trader.strategies import (
+        BollingerRSIMeanReversion,
+        DonchianBreakoutStrategy,
+        EMACrossoverStrategy,
+        MultiTimeframeTrendStrategy,
+        StrategyEnsemble,
+    )
+    from ai_crypto_trader.validation import (
+        ParameterStabilityTester,
+        StrategyScorecard,
+        WalkForwardConfig,
+        WalkForwardValidator,
+        calculate_deflated_sharpe,
+    )
+
+    settings = get_settings()
+    configure_logging(settings.app_log_level)
+
+    strategy_map = {
+        "EMA_Crossover": EMACrossoverStrategy,
+        "Mean_Reversion": BollingerRSIMeanReversion,
+        "Breakout": DonchianBreakoutStrategy,
+        "MTF_Trend": MultiTimeframeTrendStrategy,
+        "Ensemble": StrategyEnsemble,
+    }
+    if strategy not in strategy_map:
+        console.print(f"[red]Unknown strategy: {strategy}. Available: {list(strategy_map.keys())}[/red]")
+        sys.exit(1)
+
+    strat_cls = strategy_map[strategy]
+    clean_symbol = symbol.replace("/", "").replace("-", "").upper()
+    pstore = ParquetStore(settings.data_raw_dir)
+
+    raw_df = pstore.load_candles(clean_symbol, timeframe)
+    if raw_df.empty:
+        console.print(f"[red]No local data for {clean_symbol}_{timeframe}. Run 'act data backfill' first.[/red]")
+        sys.exit(1)
+
+    console.print(f"[cyan]Computing features for [bold]{clean_symbol}[/bold] ({len(raw_df)} bars)...[/cyan]")
+    fe = FeatureEngine()
+    enriched_df = fe.compute(raw_df)
+
+    strat_sample = strat_cls(version_id="temp")
+    params = dict(strat_sample.params)
+
+    # 1. Walk-Forward Validation
+    console.print(f"[cyan]Running Walk-Forward Validation ({windows} rolling windows)...[/cyan]")
+    wf_validator = WalkForwardValidator(WalkForwardConfig(num_windows=windows))
+    wf_result = wf_validator.validate(strat_cls, params, enriched_df)
+
+    wf_table = Table(title=f"Walk-Forward Windows: {strategy} on {clean_symbol} {timeframe}")
+    wf_table.add_column("Window", style="dim")
+    wf_table.add_column("IS Return", justify="right", style="cyan")
+    wf_table.add_column("IS Sharpe", justify="right", style="cyan")
+    wf_table.add_column("OOS Return", justify="right", style="magenta")
+    wf_table.add_column("OOS Sharpe", justify="right", style="magenta")
+    wf_table.add_column("WFE Ratio", justify="right", style="yellow")
+
+    for w in wf_result.windows:
+        wf_table.add_row(
+            f"W{w.window_id}",
+            f"{w.is_return:.2%}",
+            f"{w.is_sharpe:.2f}",
+            f"{w.oos_return:.2%}",
+            f"{w.oos_sharpe:.2f}",
+            f"{w.wfe:.1%}",
+        )
+    console.print(wf_table)
+    console.print(f"[bold]Overall Walk-Forward Efficiency (WFE):[/bold] [{'green' if wf_result.overall_wfe >= 0.5 else 'red'}]{wf_result.overall_wfe:.1%}[/]")
+
+    # 2. Parameter Stability Testing
+    console.print(f"\n[cyan]Running Parameter Stability & Sensitivity Sweeps (+/-10%, +/-20%)...[/cyan]")
+    stab_tester = ParameterStabilityTester()
+    stab_report = stab_tester.evaluate(strat_cls, params, enriched_df)
+
+    stab_table = Table(title="Parameter Sensitivity & Cliff Detection")
+    stab_table.add_column("Parameter", style="cyan")
+    stab_table.add_column("Perturbation", justify="right", style="white")
+    stab_table.add_column("New Value", justify="right", style="white")
+    stab_table.add_column("Sharpe", justify="right", style="yellow")
+    stab_table.add_column("Drop %", justify="right", style="red")
+
+    for r in stab_report.results[:8]:
+        drop_color = "red" if r.degradation_pct > 30.0 else "green"
+        stab_table.add_row(
+            r.parameter_name,
+            f"{r.perturbation_pct:+.0f}%",
+            str(r.perturbed_value),
+            f"{r.sharpe:.2f}",
+            f"[{drop_color}]{r.degradation_pct:.1f}%[/{drop_color}]",
+        )
+    console.print(stab_table)
+    if stab_report.has_cliff:
+        console.print("[red bold]WARNING: Parameter Cliff Detected! (>30% drop on small perturbation).[/red bold]")
+    else:
+        console.print("[green]Parameter Surface is Smooth and Stable.[/green]")
+
+    # 3. Strategy Scorecard Evaluation
+    from ai_crypto_trader.backtesting.advanced_metrics import ComprehensiveMetrics
+    from ai_crypto_trader.backtesting.engine import BacktestConfig, BacktestEngine
+    bt_engine = BacktestEngine(BacktestConfig())
+    base_res = bt_engine.run(strat_sample, enriched_df)
+
+    comp_metrics = ComprehensiveMetrics(
+        sharpe=base_res.sharpe,
+        total_return=base_res.total_return,
+        max_drawdown=base_res.max_drawdown,
+        win_rate=base_res.win_rate,
+        profit_factor=base_res.profit_factor,
+        expectancy=base_res.expectancy,
+        num_trades=base_res.num_trades,
+    )
+
+    trade_returns = [t.pnl_pct for t in base_res.trades] if hasattr(base_res, "trades") else []
+    dsr = calculate_deflated_sharpe(base_res.sharpe, trade_returns, num_trials=10)
+
+    scorecard = StrategyScorecard()
+    sc_eval = scorecard.evaluate(
+        strategy_name=strategy,
+        metrics=comp_metrics,
+        walk_forward=wf_result,
+        stability=stab_report,
+        dsr_p_value=dsr,
+    )
+
+    sc_table = Table(title="Strategy Qualification Scorecard")
+    sc_table.add_column("Gate Criterion", style="cyan")
+    sc_table.add_column("Required", style="white")
+    sc_table.add_column("Actual", style="white")
+    sc_table.add_column("Status", justify="center")
+
+    for c in sc_eval.criteria:
+        status_text = "[green bold]PASS[/green bold]" if c.passed else "[red bold]FAIL[/red bold]"
+        sc_table.add_row(c.name, c.target, c.actual, status_text)
+
+    console.print(sc_table)
+    verdict_style = "green bold" if sc_eval.is_qualified else "red bold"
+    console.print(f"\n[{verdict_style}]Final Verdict: {sc_eval.summary_verdict}[/{verdict_style}]")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # INFO COMMAND
 # ─────────────────────────────────────────────────────────────────────────────
 

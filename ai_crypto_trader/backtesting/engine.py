@@ -182,9 +182,13 @@ class BacktestEngine(BacktestEngineABC):
             win_rate=f"{metrics.win_rate:.2%}",
         )
 
+        symbol_val = "UNKNOWN"
+        if "symbol" in df.columns and len(df) > 0:
+            symbol_val = str(df["symbol"].iloc[0])
+
         return BacktestResult(
             strategy_version_id=strategy.version_id,
-            symbol=df.get("symbol", [""])[0] if "symbol" in df.columns else "UNKNOWN",
+            symbol=symbol_val,
             timeframe="unknown",
             period_start=df.index[0] if len(df) > 0 else datetime.now(timezone.utc),
             period_end=df.index[-1] if len(df) > 0 else datetime.now(timezone.utc),
