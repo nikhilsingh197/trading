@@ -81,10 +81,10 @@ def create_app() -> FastAPI:
         """Serve the interactive HTML mission control dashboard."""
         from pathlib import Path
         from fastapi.responses import HTMLResponse
-        artifact_path = Path("C:/Users/singh/.gemini/antigravity/brain/00611cef-b266-4ba6-91ef-c84fca3d4fbc/dashboard.html")
-        if artifact_path.exists():
-            with open(artifact_path, "r", encoding="utf-8") as f:
-                return HTMLResponse(content=f.read())
+        for p in [Path("dashboard.html"), Path("C:/Users/singh/.gemini/antigravity/brain/00611cef-b266-4ba6-91ef-c84fca3d4fbc/dashboard.html")]:
+            if p.exists():
+                with open(p, "r", encoding="utf-8") as f:
+                    return HTMLResponse(content=f.read())
         return HTMLResponse(content="<h1>AI Crypto Trader Dashboard</h1><p>Initializing...</p>")
 
     return app

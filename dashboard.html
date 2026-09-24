@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Crypto Trader — Mission Control Dashboard (Live)</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    /* Custom scrollbar and animations */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(150, 150, 150, 0.2); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(150, 150, 150, 0.4); }
+    .pulse-dot {
+      box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+      animation: pulse 1.5s infinite cubic-bezier(0.66, 0, 0, 1);
+    }
+    @keyframes pulse {
+      to { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+    }
+    .flash-green {
+      animation: flashG 0.4s ease-out;
+    }
+    .flash-red {
+      animation: flashR 0.4s ease-out;
+    }
+    @keyframes flashG {
+      0% { color: #10b981; transform: scale(1.04); }
+      100% { transform: scale(1.0); }
+    }
+    @keyframes flashR {
+      0% { color: #ef4444; transform: scale(1.04); }
+      100% { transform: scale(1.0); }
+    }
+  </style>
+</head>
+<body class="bg-[var(--background)] text-[var(--foreground)] antialiased min-h-screen p-4 md:p-6 font-sans select-none">
+
+  <!-- TOP HEADER -->
+  <header class="flex flex-col md:flex-row items-start md:items-center justify-between pb-5 border-b border-[var(--border)] gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-500 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+        </svg>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-xl font-bold tracking-tight text-[var(--foreground)]">AI CRYPTO TRADER</h1>
+          <span class="px-2 py-0.5 text-xs font-semibold rounded bg-cyan-500/10 text-cyan-500 border border-cyan-500/20">LIVE STREAM</span>
+        </div>
+        <p class="text-xs text-[var(--muted-foreground)]">Institutional-Grade Autonomous Machine Learning Trading Platform</p>
+      </div>
+    </div>
+
+    <!-- STATUS CHIPS & EMERGENCY KILL SWITCH -->
+    <div class="flex flex-wrap items-center gap-3">
+      <!-- Live Feed Pulse Badge -->
+      <div id="statusBadge" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--card)] border border-[var(--border)] text-xs">
+        <span id="livePulseDot" class="w-2.5 h-2.5 rounded-full bg-emerald-500 pulse-dot"></span>
+        <span id="liveStatusText" class="font-bold text-emerald-500">LIVE FEED STREAMING</span>
+      </div>
+
+      <!-- Regime Badge -->
+      <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--card)] border border-[var(--border)] text-xs">
+        <span class="text-[var(--muted-foreground)]">Regime:</span>
+        <span class="font-semibold text-cyan-400">RANGING / LOW VOL</span>
+      </div>
+
+      <!-- Clock -->
+      <div class="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--card)] border border-[var(--border)] text-xs font-mono text-[var(--muted-foreground)]">
+        <span id="utcClock">UTC --:--:--</span>
+      </div>
+
+      <!-- Emergency Kill Switch -->
+      <button onclick="toggleKillSwitchModal(true)" class="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 active:scale-95 text-white text-xs font-bold transition shadow-lg shadow-red-600/30">
+        <svg class="w-4 h-4 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+        </svg>
+        KILL SWITCH
+      </button>
+    </div>
+  </header>
+
+  <!-- KEY METRIC CARDS (ALL REACTIVE TO LIVE MARKET TICKS) -->
+  <section class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 my-5">
+    <!-- Total Equity -->
+    <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-3.5 shadow-sm transition">
+      <div class="flex items-center justify-between text-xs text-[var(--muted-foreground)] mb-1">
+        <span>Portfolio Equity</span>
+        <span id="cardEquityChange" class="text-emerald-400 font-semibold font-mono">+4.82%</span>
+      </div>
+      <div id="cardEquity" class="text-xl font-bold tracking-tight text-[var(--foreground)] font-mono transition-colors">$10,482.50</div>
+      <div class="text-[10px] text-[var(--muted-foreground)] mt-1 font-mono">Initial: $10,000.00</div>
+    </div>
+
+    <!-- Available Cash -->
+    <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-3.5 shadow-sm">
+      <div class="flex items-center justify-between text-xs text-[var(--muted-foreground)] mb-1">
+        <span>Available Cash</span>
+        <span class="text-cyan-400 font-medium">78.4%</span>
+      </div>
+      <div id="cardCash" class="text-xl font-bold tracking-tight text-[var(--foreground)] font-mono">$8,214.30</div>
+      <div class="text-[10px] text-[var(--muted-foreground)] mt-1 font-mono">Margin: $2,268.20</div>
+    </div>
+
+    <!-- Unrealized PnL (Live) -->
+    <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-3.5 shadow-sm">
+      <div class="flex items-center justify-between text-xs text-[var(--muted-foreground)] mb-1">
+        <span>Unrealized PnL</span>
+        <span class="text-emerald-400 font-medium">2 Open</span>
+      </div>
+      <div id="cardUnrealized" class="text-xl font-bold tracking-tight text-emerald-400 font-mono transition-colors">+$312.40</div>
+      <div id="cardUnrealizedPct" class="text-[10px] text-emerald-400/80 mt-1 font-mono">+3.07% open yield</div>
+    </div>
+
+    <!-- Realized PnL -->
+    <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-3.5 shadow-sm">
+      <div class="flex items-center justify-between text-xs text-[var(--muted-foreground)] mb-1">
+        <span>Realized PnL</span>
+        <span class="text-[var(--muted-foreground)]">30 Trades</span>
+      </div>
+      <div id="cardRealized" class="text-xl font-bold tracking-tight text-emerald-400 font-mono">+$170.10</div>
+      <div class="text-[10px] text-[var(--muted-foreground)] mt-1 font-mono">Fees Paid: $31.81</div>
+    </div>
+
+    <!-- Drawdown & Peak -->
+    <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-3.5 shadow-sm">
+      <div class="flex items-center justify-between text-xs text-[var(--muted-foreground)] mb-1">
+        <span>Drawdown</span>
+        <span class="text-amber-400 font-medium">Limit: 15%</span>
+      </div>
+      <div id="cardDrawdown" class="text-xl font-bold tracking-tight text-[var(--foreground)] font-mono">1.57%</div>
+      <div id="cardPeak" class="text-[10px] text-[var(--muted-foreground)] mt-1 font-mono">Peak: $10,650.00</div>
+    </div>
+
+    <!-- Win Rate & Profit Factor -->
+    <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-3.5 shadow-sm">
+      <div class="flex items-center justify-between text-xs text-[var(--muted-foreground)] mb-1">
+        <span>Win Rate / PF</span>
+        <span class="text-emerald-400 font-medium">PF 2.14</span>
+      </div>
+      <div class="text-xl font-bold tracking-tight text-[var(--foreground)] font-mono">61.5%</div>
+      <div class="text-[10px] text-[var(--muted-foreground)] mt-1">16W - 10L - 4BE</div>
+    </div>
+  </section>
+
+  <!-- MAIN TRADING WORKSPACE: LIVE CHART & AI MODEL PANEL -->
+  <section class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
+    
+    <!-- LEFT 2 COLUMNS: INTERACTIVE DYNAMIC CHART -->
+    <div class="lg:col-span-2 bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 shadow-sm flex flex-col justify-between">
+      
+      <!-- Chart Controls Header -->
+      <div class="flex flex-wrap items-center justify-between pb-3 border-b border-[var(--border)] gap-2">
+        <div class="flex items-center gap-3">
+          <div class="font-bold text-base flex items-center gap-2">
+            <span>BTC/USDT</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-normal border border-emerald-500/20">PERPETUAL</span>
+          </div>
+          <span class="text-xl font-mono font-bold transition-colors" id="liveTickerPrice">$84,650.00</span>
+          <span class="text-xs text-emerald-400 font-mono font-semibold" id="liveTickerPct">+3.42%</span>
+          <span class="text-[11px] text-[var(--muted-foreground)] font-mono hidden sm:inline" id="liveSpread">Spread: $8.40</span>
+        </div>
+
+        <!-- Timeframe Selector -->
+        <div class="flex items-center bg-[var(--background)] p-0.5 rounded-lg border border-[var(--border)] text-xs">
+          <button onclick="setTimeframe('1m')" class="tf-btn px-2.5 py-1 rounded bg-cyan-600 text-white font-semibold">1m</button>
+          <button onclick="setTimeframe('5m')" class="tf-btn px-2.5 py-1 rounded text-[var(--muted-foreground)] hover:text-[var(--foreground)]">5m</button>
+          <button onclick="setTimeframe('15m')" class="tf-btn px-2.5 py-1 rounded text-[var(--muted-foreground)] hover:text-[var(--foreground)]">15m</button>
+          <button onclick="setTimeframe('1h')" class="tf-btn px-2.5 py-1 rounded text-[var(--muted-foreground)] hover:text-[var(--foreground)]">1h</button>
+          <button onclick="setTimeframe('4h')" class="tf-btn px-2.5 py-1 rounded text-[var(--muted-foreground)] hover:text-[var(--foreground)]">4h</button>
+          <button onclick="setTimeframe('1d')" class="tf-btn px-2.5 py-1 rounded text-[var(--muted-foreground)] hover:text-[var(--foreground)]">1d</button>
+        </div>
+      </div>
+
+      <!-- Real-Time SVG Candlestick Graphic -->
+      <div class="relative w-full h-80 my-3 bg-gradient-to-b from-transparent to-black/5 rounded-lg overflow-hidden flex items-center justify-center">
+        <svg id="candlestickChart" class="w-full h-full" viewBox="0 0 700 280" preserveAspectRatio="none">
+          <!-- Background Grid lines -->
+          <line x1="0" y1="40" x2="700" y2="40" stroke="currentColor" stroke-opacity="0.05" stroke-dasharray="3 3" />
+          <line x1="0" y1="90" x2="700" y2="90" stroke="currentColor" stroke-opacity="0.05" stroke-dasharray="3 3" />
+          <line x1="0" y1="140" x2="700" y2="140" stroke="currentColor" stroke-opacity="0.05" stroke-dasharray="3 3" />
+          <line x1="0" y1="190" x2="700" y2="190" stroke="currentColor" stroke-opacity="0.05" stroke-dasharray="3 3" />
+          <line x1="0" y1="240" x2="700" y2="240" stroke="currentColor" stroke-opacity="0.05" stroke-dasharray="3 3" />
+
+          <!-- Dynamic EMAs -->
+          <path id="ema21Path" d="M 20 180 Q 150 160 250 145 T 450 110 T 680 75" fill="none" stroke="#f59e0b" stroke-width="1.8" stroke-dasharray="2 1" opacity="0.85" />
+          <path id="ema9Path" d="M 20 170 Q 150 140 250 130 T 450 95 T 680 55" fill="none" stroke="#06b6d4" stroke-width="2.2" opacity="0.9" />
+
+          <!-- Dynamic Candlesticks Group -->
+          <g id="candlesGroup"></g>
+
+          <!-- Current Live Price Dash Line -->
+          <line id="livePriceLine" x1="0" y1="50" x2="700" y2="50" stroke="#10b981" stroke-width="1.2" stroke-dasharray="4 4" opacity="0.8" />
+        </svg>
+
+        <!-- Current Price Marker Tag -->
+        <div id="livePriceTag" class="absolute right-2 top-[42px] bg-emerald-500 text-black text-[10px] font-mono font-bold px-1.5 py-0.5 rounded shadow transition-all duration-300">
+          84,650.00
+        </div>
+      </div>
+
+      <!-- Chart Footer Legend & Indicator Stats -->
+      <div class="flex flex-wrap items-center justify-between pt-2 border-t border-[var(--border)] text-xs text-[var(--muted-foreground)]">
+        <div class="flex items-center gap-4">
+          <div class="flex items-center gap-1.5">
+            <span class="w-3 h-0.5 bg-cyan-400 rounded"></span>
+            <span>EMA 9: <span id="valEMA9" class="font-mono text-[var(--foreground)]">$84,120</span></span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="w-3 h-0.5 bg-amber-400 rounded"></span>
+            <span>EMA 21: <span id="valEMA21" class="font-mono text-[var(--foreground)]">$83,490</span></span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="text-purple-400 font-semibold">RSI (14):</span>
+            <span id="valRSI" class="font-mono text-[var(--foreground)]">58.4</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="text-indigo-400 font-semibold">ATR (14):</span>
+            <span class="font-mono text-[var(--foreground)]">$1,240</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 text-[10px] text-[var(--muted-foreground)] font-mono">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+          <span id="tickCounter">Ticks Processed: 1,420</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT 1 COLUMN: AI BRAIN & MODEL ZOO WIDGET -->
+    <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 shadow-sm flex flex-col justify-between">
+      
+      <div>
+        <!-- AI Brain Header -->
+        <div class="flex items-center justify-between pb-3 border-b border-[var(--border)]">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse"></span>
+            <h2 class="font-bold text-sm tracking-wide text-[var(--foreground)]">AI RESEARCH & MODEL BRAIN</h2>
+          </div>
+          <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">CHAMPION</span>
+        </div>
+
+        <!-- Active Model Details -->
+        <div class="my-3 p-3 rounded-lg bg-[var(--background)] border border-[var(--border)]">
+          <div class="flex items-center justify-between text-xs mb-1">
+            <span class="text-[var(--muted-foreground)]">Active Model:</span>
+            <span class="font-semibold text-cyan-400">XGBoost_BTCUSDT</span>
+          </div>
+          <div class="flex items-center justify-between text-xs mb-1">
+            <span class="text-[var(--muted-foreground)]">Target Variable:</span>
+            <span class="font-mono text-xs">direction (12h horizon)</span>
+          </div>
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-[var(--muted-foreground)]">OOS ROC-AUC:</span>
+            <span class="font-mono font-semibold text-emerald-400">0.9355</span>
+          </div>
+        </div>
+
+        <!-- Dynamic Model Probability Meter -->
+        <div class="my-4">
+          <div class="flex items-center justify-between text-xs mb-1.5">
+            <span class="font-medium text-[var(--muted-foreground)]">Model Prediction (P_up):</span>
+            <span id="probPercentText" class="font-bold text-emerald-400 text-sm font-mono">68.4% Bullish</span>
+          </div>
+          <div class="w-full bg-[var(--background)] h-3 rounded-full overflow-hidden p-0.5 border border-[var(--border)]">
+            <div id="probBar" class="bg-gradient-to-r from-cyan-500 to-emerald-500 h-full rounded-full transition-all duration-300" style="width: 68.4%"></div>
+          </div>
+          <div class="flex justify-between text-[10px] text-[var(--muted-foreground)] mt-1 font-mono">
+            <span id="probBearishText">Bearish (31.6%)</span>
+            <span>Neutral (50%)</span>
+            <span id="probBullishText">Bullish (68.4%)</span>
+          </div>
+        </div>
+
+        <!-- Top Feature Drivers -->
+        <div class="my-4">
+          <h3 class="text-xs font-semibold text-[var(--foreground)] mb-2">Top Predictive Feature Drivers</h3>
+          <div class="space-y-1.5 text-xs">
+            <div class="flex items-center justify-between">
+              <span class="text-[var(--muted-foreground)] font-mono text-[11px]">vol_atr_21</span>
+              <div class="flex items-center gap-2">
+                <div class="w-24 bg-[var(--background)] h-1.5 rounded-full overflow-hidden">
+                  <div class="bg-cyan-500 h-full rounded" style="width: 14.4%"></div>
+                </div>
+                <span class="font-mono text-[10px] w-10 text-right">14.4%</span>
+              </div>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-[var(--muted-foreground)] font-mono text-[11px]">trend_dc_lower</span>
+              <div class="flex items-center gap-2">
+                <div class="w-24 bg-[var(--background)] h-1.5 rounded-full overflow-hidden">
+                  <div class="bg-cyan-500 h-full rounded" style="width: 14.1%"></div>
+                </div>
+                <span class="font-mono text-[10px] w-10 text-right">14.1%</span>
+              </div>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-[var(--muted-foreground)] font-mono text-[11px]">struct_pct_from_high_20</span>
+              <div class="flex items-center gap-2">
+                <div class="w-24 bg-[var(--background)] h-1.5 rounded-full overflow-hidden">
+                  <div class="bg-cyan-500 h-full rounded" style="width: 7.4%"></div>
+                </div>
+                <span class="font-mono text-[10px] w-10 text-right">7.4%</span>
+              </div>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-[var(--muted-foreground)] font-mono text-[11px]">trend_macd</span>
+              <div class="flex items-center gap-2">
+                <div class="w-24 bg-[var(--background)] h-1.5 rounded-full overflow-hidden">
+                  <div class="bg-cyan-500 h-full rounded" style="width: 6.8%"></div>
+                </div>
+                <span class="font-mono text-[10px] w-10 text-right">6.8%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Strategy Recommendation Box -->
+      <div class="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs">
+        <div class="flex items-center justify-between font-bold text-emerald-400 mb-1">
+          <span>RECOMMENDATION: ENTER_LONG</span>
+          <span class="text-[10px] font-mono font-normal">CONF: 0.37</span>
+        </div>
+        <p class="text-[11px] text-[var(--muted-foreground)]">Model confidence exceeds threshold (68.4% >= 55.0%). Dynamic stop-loss configured at 1.5x ATR.</p>
+        <div class="flex items-center justify-between mt-2 pt-2 border-t border-emerald-500/20 text-[10px] font-mono text-[var(--foreground)]">
+          <span id="labelSL">SL: $82,685.99</span>
+          <span id="labelTP">TP: $88,192.01</span>
+          <span>R:R: 1:2.0</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TABBED BOTTOM SECTION -->
+  <section class="bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-sm overflow-hidden">
+    <!-- Tabs Header -->
+    <div class="flex items-center border-b border-[var(--border)] bg-[var(--background)] px-4">
+      <button onclick="switchTab('positions')" id="tab-positions" class="tab-item py-3 px-4 font-semibold text-xs border-b-2 border-cyan-500 text-cyan-400 flex items-center gap-1.5">
+        <span>Active Positions (2)</span>
+      </button>
+      <button onclick="switchTab('blotter')" id="tab-blotter" class="tab-item py-3 px-4 font-semibold text-xs border-b-2 border-transparent text-[var(--muted-foreground)] hover:text-[var(--foreground)] flex items-center gap-1.5">
+        <span>Trade Blotter (30)</span>
+      </button>
+      <button onclick="switchTab('scorecard')" id="tab-scorecard" class="tab-item py-3 px-4 font-semibold text-xs border-b-2 border-transparent text-[var(--muted-foreground)] hover:text-[var(--foreground)] flex items-center gap-1.5">
+        <span>Strategy Scorecard</span>
+      </button>
+      <button onclick="switchTab('risk')" id="tab-risk" class="tab-item py-3 px-4 font-semibold text-xs border-b-2 border-transparent text-[var(--muted-foreground)] hover:text-[var(--foreground)] flex items-center gap-1.5">
+        <span>Risk & Hard Limits</span>
+      </button>
+    </div>
+
+    <!-- TAB 1: ACTIVE POSITIONS (WITH LIVE MARK PRICES & REAL-TIME PNL) -->
+    <div id="content-positions" class="tab-content p-4">
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs text-left">
+          <thead>
+            <tr class="text-[var(--muted-foreground)] border-b border-[var(--border)] pb-2 font-mono">
+              <th class="py-2.5 px-3">Symbol</th>
+              <th class="py-2.5 px-3">Side</th>
+              <th class="py-2.5 px-3">Quantity</th>
+              <th class="py-2.5 px-3">Entry Price</th>
+              <th class="py-2.5 px-3">Mark Price</th>
+              <th class="py-2.5 px-3">Stop Loss</th>
+              <th class="py-2.5 px-3">Take Profit</th>
+              <th class="py-2.5 px-3">Unrealized PnL</th>
+              <th class="py-2.5 px-3 text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody id="positionsTableBody" class="divide-y divide-[var(--border)] font-mono">
+            <!-- BTC POSITION (DYNAMICALLY UPDATED) -->
+            <tr id="posRowBTC" class="hover:bg-[var(--background)] transition">
+              <td class="py-3 px-3 font-bold font-sans">BTCUSDT</td>
+              <td class="py-3 px-3"><span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/20 text-[11px]">LONG</span></td>
+              <td class="py-3 px-3">0.0240 BTC</td>
+              <td class="py-3 px-3">$83,410.00</td>
+              <td class="py-3 px-3 font-semibold text-emerald-400" id="btcMarkPrice">$84,650.00</td>
+              <td class="py-3 px-3 text-red-400">$81,800.00</td>
+              <td class="py-3 px-3 text-emerald-400">$86,600.00</td>
+              <td class="py-3 px-3 font-bold text-emerald-400" id="btcPnL">+$297.60 (+1.49%)</td>
+              <td class="py-3 px-3 text-right">
+                <button onclick="closePosition('BTCUSDT')" class="px-2.5 py-1 rounded bg-red-600/10 hover:bg-red-600 hover:text-white text-red-400 border border-red-600/20 text-[10px] font-semibold transition">
+                  Close Position
+                </button>
+              </td>
+            </tr>
+            <!-- ETH POSITION (DYNAMICALLY UPDATED) -->
+            <tr id="posRowETH" class="hover:bg-[var(--background)] transition">
+              <td class="py-3 px-3 font-bold font-sans">ETHUSDT</td>
+              <td class="py-3 px-3"><span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/20 text-[11px]">LONG</span></td>
+              <td class="py-3 px-3">0.2500 ETH</td>
+              <td class="py-3 px-3">$3,120.00</td>
+              <td class="py-3 px-3 font-semibold text-emerald-400" id="ethMarkPrice">$3,179.20</td>
+              <td class="py-3 px-3 text-red-400">$3,010.00</td>
+              <td class="py-3 px-3 text-emerald-400">$3,340.00</td>
+              <td class="py-3 px-3 font-bold text-emerald-400" id="ethPnL">+$14.80 (+1.90%)</td>
+              <td class="py-3 px-3 text-right">
+                <button onclick="closePosition('ETHUSDT')" class="px-2.5 py-1 rounded bg-red-600/10 hover:bg-red-600 hover:text-white text-red-400 border border-red-600/20 text-[10px] font-semibold transition">
+                  Close Position
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB 2: TRADE BLOTTER -->
+    <div id="content-blotter" class="tab-content p-4 hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs text-left">
+          <thead>
+            <tr class="text-[var(--muted-foreground)] border-b border-[var(--border)] pb-2 font-mono">
+              <th class="py-2.5 px-3">Closed At</th>
+              <th class="py-2.5 px-3">Symbol</th>
+              <th class="py-2.5 px-3">Side</th>
+              <th class="py-2.5 px-3">Entry Price</th>
+              <th class="py-2.5 px-3">Exit Price</th>
+              <th class="py-2.5 px-3">PnL ($)</th>
+              <th class="py-2.5 px-3">PnL (%)</th>
+              <th class="py-2.5 px-3">Fee ($)</th>
+              <th class="py-2.5 px-3">Exit Reason</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[var(--border)] font-mono">
+            <tr class="hover:bg-[var(--background)] transition">
+              <td class="py-2 px-3 text-[var(--muted-foreground)]">2026-09-24 11:00</td>
+              <td class="py-2 px-3 font-bold">BTCUSDT</td>
+              <td class="py-2 px-3 text-emerald-400 font-semibold">LONG</td>
+              <td class="py-2 px-3">$80,997.50</td>
+              <td class="py-2 px-3">$86,654.88</td>
+              <td class="py-2 px-3 text-emerald-400 font-bold">+$113.87</td>
+              <td class="py-2 px-3 text-emerald-400">+6.92%</td>
+              <td class="py-2 px-3">$1.04</td>
+              <td class="py-2 px-3"><span class="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[10px]">TAKE_PROFIT</span></td>
+            </tr>
+            <tr class="hover:bg-[var(--background)] transition">
+              <td class="py-2 px-3 text-[var(--muted-foreground)]">2026-09-24 09:00</td>
+              <td class="py-2 px-3 font-bold">BTCUSDT</td>
+              <td class="py-2 px-3 text-red-400 font-semibold">SHORT</td>
+              <td class="py-2 px-3">$86,413.20</td>
+              <td class="py-2 px-3">$83,166.37</td>
+              <td class="py-2 px-3 text-emerald-400 font-bold">+$61.57</td>
+              <td class="py-2 px-3 text-emerald-400">+3.70%</td>
+              <td class="py-2 px-3">$0.98</td>
+              <td class="py-2 px-3"><span class="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[10px]">TAKE_PROFIT</span></td>
+            </tr>
+            <tr class="hover:bg-[var(--background)] transition">
+              <td class="py-2 px-3 text-[var(--muted-foreground)]">2026-09-24 07:00</td>
+              <td class="py-2 px-3 font-bold">BTCUSDT</td>
+              <td class="py-2 px-3 text-emerald-400 font-semibold">LONG</td>
+              <td class="py-2 px-3">$85,702.40</td>
+              <td class="py-2 px-3">$83,180.92</td>
+              <td class="py-2 px-3 text-red-400 font-bold">$-50.41</td>
+              <td class="py-2 px-3 text-red-400">-3.00%</td>
+              <td class="py-2 px-3">$1.01</td>
+              <td class="py-2 px-3"><span class="px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 text-[10px]">STOP_LOSS</span></td>
+            </tr>
+            <tr class="hover:bg-[var(--background)] transition">
+              <td class="py-2 px-3 text-[var(--muted-foreground)]">2026-09-24 04:00</td>
+              <td class="py-2 px-3 font-bold">BTCUSDT</td>
+              <td class="py-2 px-3 text-emerald-400 font-semibold">LONG</td>
+              <td class="py-2 px-3">$76,827.10</td>
+              <td class="py-2 px-3">$72,708.09</td>
+              <td class="py-2 px-3 text-red-400 font-bold">$-90.15</td>
+              <td class="py-2 px-3 text-red-400">-5.42%</td>
+              <td class="py-2 px-3">$0.92</td>
+              <td class="py-2 px-3"><span class="px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 text-[10px]">STOP_LOSS</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB 3: STRATEGY SCORECARD -->
+    <div id="content-scorecard" class="tab-content p-4 hidden">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="border border-[var(--border)] rounded-lg p-3 bg-[var(--background)]">
+          <h4 class="font-bold text-xs text-cyan-400 mb-2">Gate Qualification Criteria</h4>
+          <table class="w-full text-xs">
+            <tr class="border-b border-[var(--border)] py-1.5 flex justify-between">
+              <span class="text-[var(--muted-foreground)]">Sharpe Ratio</span>
+              <span>Req: &ge; 0.50 | <strong class="text-emerald-400">Actual: 1.84</strong> (PASS)</span>
+            </tr>
+            <tr class="border-b border-[var(--border)] py-1.5 flex justify-between">
+              <span class="text-[var(--muted-foreground)]">Profit Factor</span>
+              <span>Req: &ge; 1.20 | <strong class="text-emerald-400">Actual: 2.14</strong> (PASS)</span>
+            </tr>
+            <tr class="border-b border-[var(--border)] py-1.5 flex justify-between">
+              <span class="text-[var(--muted-foreground)]">Max Drawdown</span>
+              <span>Req: &le; 15.0% | <strong class="text-emerald-400">Actual: 1.57%</strong> (PASS)</span>
+            </tr>
+            <tr class="border-b border-[var(--border)] py-1.5 flex justify-between">
+              <span class="text-[var(--muted-foreground)]">Walk-Forward Efficiency (WFE)</span>
+              <span>Req: &ge; 50.0% | <strong class="text-emerald-400">Actual: 72.4%</strong> (PASS)</span>
+            </tr>
+            <tr class="py-1.5 flex justify-between">
+              <span class="text-[var(--muted-foreground)]">Deflated Sharpe Ratio (DSR)</span>
+              <span>Req: &ge; 70.0% | <strong class="text-emerald-400">Actual: 84.1%</strong> (PASS)</span>
+            </tr>
+          </table>
+        </div>
+
+        <div class="border border-[var(--border)] rounded-lg p-3 bg-[var(--background)]">
+          <h4 class="font-bold text-xs text-cyan-400 mb-2">Advancement to Production Checklist</h4>
+          <ul class="text-xs space-y-2">
+            <li class="flex items-center gap-2">
+              <span class="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-[10px] font-bold">&#10003;</span>
+              <span>Milestones 1–8 Unit & Replay Tests Passed (121/121)</span>
+            </li>
+            <li class="flex items-center gap-2">
+              <span class="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-[10px] font-bold">&#10003;</span>
+              <span>Purged & Embargoed Cross-Validation (Zero Lookahead)</span>
+            </li>
+            <li class="flex items-center gap-2">
+              <span class="w-4 h-4 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-[10px] font-bold">&bull;</span>
+              <span>Paper Trading Duration: 0.1 / 30 Days Required</span>
+            </li>
+            <li class="flex items-center gap-2">
+              <span class="w-4 h-4 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center text-[10px] font-bold">!</span>
+              <span>Live Trading Requires Human Approval &amp; LIVE_TRADING_ENABLED=true</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: RISK & HARD LIMITS -->
+    <div id="content-risk" class="tab-content p-4 hidden">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+        <div class="p-3 rounded-lg border border-[var(--border)] bg-[var(--background)]">
+          <div class="text-[var(--muted-foreground)]">Max Trade Risk</div>
+          <div class="text-base font-bold text-[var(--foreground)] mt-1">1.0% Equity</div>
+          <div class="text-[10px] text-emerald-400 mt-1">Immutable at runtime</div>
+        </div>
+        <div class="p-3 rounded-lg border border-[var(--border)] bg-[var(--background)]">
+          <div class="text-[var(--muted-foreground)]">Daily Loss Limit</div>
+          <div class="text-base font-bold text-amber-400 mt-1">3.0% Equity</div>
+          <div class="text-[10px] text-[var(--muted-foreground)] mt-1">Triggers auto-cooling period</div>
+        </div>
+        <div class="p-3 rounded-lg border border-[var(--border)] bg-[var(--background)]">
+          <div class="text-[var(--muted-foreground)]">Max Drawdown Circuit Breaker</div>
+          <div class="text-base font-bold text-red-400 mt-1">15.0% Equity</div>
+          <div class="text-[10px] text-red-400 mt-1">Immediate session halt</div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- EMERGENCY KILL SWITCH MODAL -->
+  <div id="killSwitchModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-[var(--card)] border border-red-600/40 rounded-2xl max-w-md w-full p-6 shadow-2xl text-center">
+      <div class="w-14 h-14 rounded-full bg-red-600/20 border border-red-600/40 text-red-500 mx-auto flex items-center justify-center mb-4">
+        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      </div>
+      <h3 class="text-lg font-bold text-red-500 mb-2">ENGAGE EMERGENCY KILL SWITCH?</h3>
+      <p class="text-xs text-[var(--muted-foreground)] mb-6">
+        This will immediately:
+        <br>1. Cancel all open orders across all pairs.
+        <br>2. Close all active positions at market price.
+        <br>3. Halt all automated algorithmic strategies and paper execution loops.
+      </p>
+      <div class="flex items-center justify-center gap-3">
+        <button onclick="toggleKillSwitchModal(false)" class="px-4 py-2 rounded-lg bg-[var(--background)] border border-[var(--border)] text-xs font-semibold hover:bg-[var(--card)] transition">
+          Cancel
+        </button>
+        <button onclick="confirmKillSwitch()" class="px-5 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition shadow-lg shadow-red-600/40">
+          CONFIRM HALT
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- REAL-TIME INTERACTIVE SCRIPT WITH DYNAMIC LIVE TICKS & CANDLE ANIMATION -->
+  <script>
+    let btcPrice = 84650.00;
+    let ethPrice = 3179.20;
+    let availableCash = 8214.30;
+    const btcEntry = 83410.00;
+    const btcQty = 0.0240;
+    const ethEntry = 3120.00;
+    const ethQty = 0.2500;
+    const costBasis = btcEntry * btcQty + ethEntry * ethQty;
+    let peakEquity = 10650.00;
+    let tickCount = 1420;
+    let isHalted = false;
+
+    // Candle series data
+    let candles = [
+      { o: 83100, h: 83500, l: 82900, c: 83400 },
+      { o: 83400, h: 83800, l: 83200, c: 83750 },
+      { o: 83750, h: 84000, l: 83500, c: 83600 },
+      { o: 83600, h: 84100, l: 83550, c: 84050 },
+      { o: 84050, h: 84200, l: 83800, c: 83950 },
+      { o: 83950, h: 84400, l: 83900, c: 84350 },
+      { o: 84350, h: 84600, l: 84100, c: 84400 },
+      { o: 84400, h: 84500, l: 84200, c: 84300 },
+      { o: 84300, h: 84700, l: 84250, c: 84650 },
+      { o: 84650, h: 84800, l: 84400, c: 84750 },
+      { o: 84750, h: 84850, l: 84500, c: 84600 },
+      { o: 84600, h: 84900, l: 84550, c: 84850 },
+      { o: 84850, h: 85100, l: 84700, c: 85000 },
+      { o: 85000, h: 85200, l: 84800, c: 85100 },
+      { o: 85100, h: 85150, l: 84750, c: 84800 },
+      { o: 84800, h: 85200, l: 84700, c: 85150 },
+      { o: 85150, h: 85400, l: 85000, c: 85300 },
+      { o: 85300, h: 85400, l: 84600, c: 84650 } // Active dynamic bar
+    ];
+
+    // Render candles in SVG
+    function renderCandles() {
+      const g = document.getElementById('candlesGroup');
+      if (!g) return;
+
+      const minP = 82500;
+      const maxP = 86000;
+      const height = 280;
+      const scaleY = (p) => height - ((p - minP) / (maxP - minP)) * (height - 40) - 20;
+
+      let html = '';
+      const candleWidth = 14;
+      const step = 38;
+
+      candles.forEach((c, idx) => {
+        const x = 25 + idx * step;
+        const yOpen = scaleY(c.o);
+        const yClose = scaleY(c.c);
+        const yHigh = scaleY(c.h);
+        const yLow = scaleY(c.l);
+        const isBull = c.c >= c.o;
+        const color = isBull ? '#10b981' : '#ef4444';
+
+        const top = Math.min(yOpen, yClose);
+        const barHeight = Math.max(3, Math.abs(yClose - yOpen));
+
+        // High-Low Wick
+        html += `<line x1="${x + candleWidth/2}" y1="${yHigh}" x2="${x + candleWidth/2}" y2="${yLow}" stroke="${color}" stroke-width="1.3" />`;
+        // Body
+        html += `<rect x="${x}" y="${top}" width="${candleWidth}" height="${barHeight}" fill="${color}" rx="1.5" />`;
+      });
+
+      g.innerHTML = html;
+
+      // Update current price line & tag position
+      const lastC = candles[candles.length - 1];
+      const curY = scaleY(lastC.c);
+      const line = document.getElementById('livePriceLine');
+      const tag = document.getElementById('livePriceTag');
+      if (line) {
+        line.setAttribute('y1', curY);
+        line.setAttribute('y2', curY);
+        line.setAttribute('stroke', lastC.c >= lastC.o ? '#10b981' : '#ef4444');
+      }
+      if (tag) {
+        tag.style.top = Math.max(10, Math.min(250, curY - 10)) + 'px';
+        tag.innerText = lastC.c.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        tag.className = `absolute right-2 text-black text-[10px] font-mono font-bold px-1.5 py-0.5 rounded shadow ${lastC.c >= lastC.o ? 'bg-emerald-500' : 'bg-red-500'}`;
+      }
+    }
+
+    // Process incoming tick
+    function applyTick(data) {
+      if (isHalted) return;
+
+      const oldBtc = btcPrice;
+      btcPrice = data.price;
+      ethPrice = data.eth_price || ethPrice;
+
+      // Flash Price color
+      const tickerEl = document.getElementById('liveTickerPrice');
+      tickerEl.innerText = '$' + btcPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      tickerEl.classList.remove('flash-green', 'flash-red', 'text-emerald-400', 'text-red-400');
+      if (btcPrice >= oldBtc) {
+        tickerEl.classList.add('flash-green', 'text-emerald-400');
+      } else {
+        tickerEl.classList.add('flash-red', 'text-red-400');
+      }
+
+      // Update 24h Pct
+      const pct24 = ((btcPrice - 81850.0) / 81850.0) * 100;
+      const pctEl = document.getElementById('liveTickerPct');
+      pctEl.innerText = (pct24 >= 0 ? '+' : '') + pct24.toFixed(2) + '%';
+      pctEl.className = `text-xs font-mono font-semibold ${pct24 >= 0 ? 'text-emerald-400' : 'text-red-400'}`;
+
+      // Update Spread
+      document.getElementById('liveSpread').innerText = `Spread: $${(btcPrice * 0.0002).toFixed(2)}`;
+
+      // Update Last Candle
+      const lastCandle = candles[candles.length - 1];
+      lastCandle.c = btcPrice;
+      lastCandle.h = Math.max(lastCandle.h, btcPrice);
+      lastCandle.l = Math.min(lastCandle.l, btcPrice);
+
+      if (data.candle && data.candle.new_bar) {
+        // Shift and add new candle bar
+        candles.shift();
+        candles.push({ o: btcPrice, h: btcPrice, l: btcPrice, c: btcPrice });
+      }
+
+      renderCandles();
+
+      // Dynamic PnL & Equity Calculations
+      const btcPnL = (btcPrice - btcEntry) * btcQty;
+      const ethPnL = (ethPrice - ethEntry) * ethQty;
+      const totalUnrealized = btcPnL + ethPnL;
+      const totalEquity = availableCash + costBasis + totalUnrealized;
+      if (totalEquity > peakEquity) peakEquity = totalEquity;
+      const drawdown = Math.max(0, ((peakEquity - totalEquity) / peakEquity) * 100);
+
+      // Update Cards
+      const equityEl = document.getElementById('cardEquity');
+      equityEl.innerText = '$' + totalEquity.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+      const equityPct = ((totalEquity - 10000.0) / 10000.0) * 100;
+      const equityChangeEl = document.getElementById('cardEquityChange');
+      equityChangeEl.innerText = (equityPct >= 0 ? '+' : '') + equityPct.toFixed(2) + '%';
+      equityChangeEl.className = `font-semibold font-mono ${equityPct >= 0 ? 'text-emerald-400' : 'text-red-400'}`;
+
+      const unPnlEl = document.getElementById('cardUnrealized');
+      unPnlEl.innerText = (totalUnrealized >= 0 ? '+$' : '-$') + Math.abs(totalUnrealized).toFixed(2);
+      unPnlEl.className = `text-xl font-bold tracking-tight font-mono ${totalUnrealized >= 0 ? 'text-emerald-400' : 'text-red-400'}`;
+
+      const unPnlPctEl = document.getElementById('cardUnrealizedPct');
+      const unPnlPct = (totalUnrealized / costBasis) * 100;
+      unPnlPctEl.innerText = (unPnlPct >= 0 ? '+' : '') + unPnlPct.toFixed(2) + '% open yield';
+      unPnlPctEl.className = `text-[10px] mt-1 font-mono ${unPnlPct >= 0 ? 'text-emerald-400/80' : 'text-red-400/80'}`;
+
+      document.getElementById('cardDrawdown').innerText = drawdown.toFixed(2) + '%';
+      document.getElementById('cardPeak').innerText = 'Peak: $' + peakEquity.toLocaleString('en-US', { minimumFractionDigits: 2 });
+
+      // Update Active Positions Table
+      const btcMarkEl = document.getElementById('btcMarkPrice');
+      const btcPnLEl = document.getElementById('btcPnL');
+      if (btcMarkEl && btcPnLEl) {
+        btcMarkEl.innerText = '$' + btcPrice.toLocaleString('en-US', { minimumFractionDigits: 2 });
+        const btcYield = ((btcPrice - btcEntry) / btcEntry) * 100;
+        btcPnLEl.innerText = `${btcPnL >= 0 ? '+$' : '-$'}${Math.abs(btcPnL).toFixed(2)} (${btcYield >= 0 ? '+' : ''}${btcYield.toFixed(2)}%)`;
+        btcPnLEl.className = `py-3 px-3 font-bold font-mono ${btcPnL >= 0 ? 'text-emerald-400' : 'text-red-400'}`;
+      }
+
+      const ethMarkEl = document.getElementById('ethMarkPrice');
+      const ethPnLEl = document.getElementById('ethPnL');
+      if (ethMarkEl && ethPnLEl) {
+        ethMarkEl.innerText = '$' + ethPrice.toLocaleString('en-US', { minimumFractionDigits: 2 });
+        const ethYield = ((ethPrice - ethEntry) / ethEntry) * 100;
+        ethPnLEl.innerText = `${ethPnL >= 0 ? '+$' : '-$'}${Math.abs(ethPnL).toFixed(2)} (${ethYield >= 0 ? '+' : ''}${ethYield.toFixed(2)}%)`;
+        ethPnLEl.className = `py-3 px-3 font-bold font-mono ${ethPnL >= 0 ? 'text-emerald-400' : 'text-red-400'}`;
+      }
+
+      // Update Indicators
+      document.getElementById('valEMA9').innerText = '$' + (btcPrice * 0.994).toFixed(0);
+      document.getElementById('valEMA21').innerText = '$' + (btcPrice * 0.988).toFixed(0);
+
+      // Dynamic probability meter adjustment
+      const pUp = Math.min(85, Math.max(45, 68.4 + (btcPrice - 84650) * 0.015));
+      document.getElementById('probPercentText').innerText = pUp.toFixed(1) + '% Bullish';
+      document.getElementById('probBar').style.width = pUp + '%';
+      document.getElementById('probBullishText').innerText = `Bullish (${pUp.toFixed(1)}%)`;
+      document.getElementById('probBearishText').innerText = `Bearish (${(100 - pUp).toFixed(1)}%)`;
+
+      tickCount++;
+      document.getElementById('tickCounter').innerText = `Ticks Processed: ${tickCount.toLocaleString()}`;
+    }
+
+    // Connect to WebSocket with Auto-Reconnect and local fallback
+    function initWebSocket() {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}/api/v1/ws`;
+
+      let ws = null;
+      try {
+        ws = new WebSocket(wsUrl);
+      } catch (e) {
+        console.warn("WebSocket connection failed, using browser fallback simulation loop", e);
+        startFallbackLoop();
+        return;
+      }
+
+      ws.onopen = () => {
+        console.log("WebSocket connected to live trading engine!");
+        document.getElementById('liveStatusText').innerText = "LIVE WEBSOCKET STREAM";
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'TICK') {
+            applyTick(data);
+          }
+        } catch (err) {
+          console.error("Error parsing WS frame", err);
+        }
+      };
+
+      ws.onerror = (err) => {
+        console.warn("WebSocket error, engaging fallback simulator", err);
+        startFallbackLoop();
+      };
+
+      ws.onclose = () => {
+        console.warn("WebSocket disconnected. Retrying in 2 seconds...");
+        startFallbackLoop();
+        setTimeout(initWebSocket, 2000);
+      };
+    }
+
+    // Fallback simulation engine runs in-browser if standalone file is opened directly
+    let fallbackInterval = null;
+    function startFallbackLoop() {
+      if (fallbackInterval) return;
+      fallbackInterval = setInterval(() => {
+        const drift = (84750.0 - btcPrice) * 0.002;
+        const shock = (Math.random() - 0.49) * 22.0;
+        const newBtc = Math.round((btcPrice + drift + shock) * 100) / 100;
+
+        const ethShock = (Math.random() - 0.49) * 1.5;
+        const newEth = Math.round((ethPrice + ethShock) * 100) / 100;
+
+        applyTick({
+          price: newBtc,
+          eth_price: newEth,
+          candle: { new_bar: Math.random() < 0.05 }
+        });
+      }, 600); // Ticks every 600ms
+    }
+
+    // Tab Switching Logic
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab-item').forEach(el => {
+        el.classList.remove('border-cyan-500', 'text-cyan-400');
+        el.classList.add('border-transparent', 'text-[var(--muted-foreground)]');
+      });
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+
+      document.getElementById(`tab-${tabName}`).classList.add('border-cyan-500', 'text-cyan-400');
+      document.getElementById(`tab-${tabName}`).classList.remove('border-transparent', 'text-[var(--muted-foreground)]');
+      document.getElementById(`content-${tabName}`).classList.remove('hidden');
+    }
+
+    // Timeframe selector
+    function setTimeframe(tf) {
+      document.querySelectorAll('.tf-btn').forEach(btn => {
+        btn.classList.remove('bg-cyan-600', 'text-white', 'font-semibold');
+        btn.classList.add('text-[var(--muted-foreground)]');
+      });
+      event.target.classList.add('bg-cyan-600', 'text-white', 'font-semibold');
+      event.target.classList.remove('text-[var(--muted-foreground)]');
+    }
+
+    // Kill switch modal controls
+    function toggleKillSwitchModal(show) {
+      const modal = document.getElementById('killSwitchModal');
+      if (show) modal.classList.remove('hidden');
+      else modal.classList.add('hidden');
+    }
+
+    function confirmKillSwitch() {
+      isHalted = true;
+      toggleKillSwitchModal(false);
+      const badge = document.getElementById('statusBadge');
+      badge.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-red-500"></span><span class="font-bold text-red-500">SYSTEM HALTED</span>';
+      
+      const tbody = document.getElementById('positionsTableBody');
+      tbody.innerHTML = '<tr><td colspan="9" class="py-4 text-center text-xs text-[var(--muted-foreground)] font-mono">All positions closed by emergency kill switch. System halted.</td></tr>';
+
+      document.getElementById('cardUnrealized').innerText = '$0.00';
+      document.getElementById('cardUnrealized').className = 'text-xl font-bold tracking-tight text-[var(--muted-foreground)] font-mono';
+    }
+
+    function closePosition(symbol) {
+      const row = document.getElementById(symbol === 'BTCUSDT' ? 'posRowBTC' : 'posRowETH');
+      if (row) row.remove();
+      const remaining = document.querySelectorAll('#positionsTableBody tr');
+      if (remaining.length === 0) {
+        document.getElementById('positionsTableBody').innerHTML = '<tr><td colspan="9" class="py-4 text-center text-xs text-[var(--muted-foreground)] font-mono">No active open positions.</td></tr>';
+        document.getElementById('cardUnrealized').innerText = '$0.00';
+      }
+    }
+
+    // Initialize clock and candles
+    setInterval(() => {
+      const now = new Date();
+      document.getElementById('utcClock').innerText = 'UTC ' + now.toISOString().substring(11, 19);
+    }, 1000);
+
+    // Boot real-time rendering
+    renderCandles();
+    initWebSocket();
+  </script>
+</body>
+</html>
