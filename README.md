@@ -94,8 +94,8 @@ make test-unit
 | 1 | ✅ **DONE** | Architecture + repository + configuration |
 | 2 | ✅ **DONE** | Historical data pipeline (Parquet + DB repo, validation, gap repair, integrity audit) |
 | 3 | ✅ **DONE** | Full database + Alembic migrations (20 tables, TimescaleDB hypertables, CRUD repos) |
-| 4 | 🔲 Next | Advanced backtesting engine (multi-asset, funding rates, slippage & fee models) |
-| 5 | 🔲 | Additional rule-based strategies |
+| 4 | ✅ **DONE** | Advanced backtesting engine (Multi-asset portfolio, dynamic slippage, funding, Monte Carlo) |
+| 5 | 🔲 Next | Additional rule-based strategies (Mean-reversion, Breakout, Volatility Expansion) |
 | 6 | 🔲 | Walk-forward validation |
 | 7 | 🔲 | ML research pipeline |
 | 8 | 🔲 | Paper trading (live data) |

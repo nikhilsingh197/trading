@@ -360,16 +360,20 @@ def db_status() -> None:
 # ─────────────────────────────────────────────────────────────────────────────
 
 @main.command()
-@click.option("--symbol", default="BTCUSDT", help="Symbol to backtest")
-@click.option("--timeframe", default="1h", help="Timeframe")
-@click.option("--capital", default=10000.0, type=float, help="Initial capital")
+@click.option("--symbols", default="BTCUSDT", help="Comma-separated symbols (e.g. BTCUSDT,ETHUSDT)")
+@click.option("--timeframe", default="1h", help="Timeframe (e.g. 1h)")
+@click.option("--capital", default=50000.0, type=float, help="Initial portfolio capital ($)")
 @click.option("--strategy", default="EMA_Crossover", help="Strategy name")
-def backtest(symbol: str, timeframe: str, capital: float, strategy: str) -> None:
-    """Run a backtest on stored historical data."""
+@click.option("--monte-carlo/--no-monte-carlo", default=True, help="Run Monte Carlo bootstrap analysis")
+def backtest(symbols: str, timeframe: str, capital: float, strategy: str, monte_carlo: bool) -> None:
+    """Run event-driven backtest with realistic cost modeling and analytics."""
     import pandas as pd
     from ai_crypto_trader.config.settings import get_settings
     from ai_crypto_trader.core.logging import configure_logging
-    from ai_crypto_trader.backtesting.engine import BacktestConfig, BacktestEngine
+    from ai_crypto_trader.backtesting.portfolio_engine import (
+        MultiAssetBacktestEngine,
+        PortfolioEngineConfig,
+    )
     from ai_crypto_trader.features.feature_engine import FeatureEngine
     from ai_crypto_trader.ingestion.parquet_store import ParquetStore
     from ai_crypto_trader.strategies.trend_following import EMACrossoverStrategy
@@ -377,19 +381,8 @@ def backtest(symbol: str, timeframe: str, capital: float, strategy: str) -> None
     settings = get_settings()
     configure_logging(settings.app_log_level)
 
+    symbol_list = [s.strip().replace("/", "").replace("-", "").upper() for s in symbols.split(",") if s.strip()]
     pstore = ParquetStore(settings.data_raw_dir)
-    clean_symbol = symbol.replace("/", "").replace("-", "").upper()
-    df = pstore.load_candles(clean_symbol, timeframe)
-
-    if df.empty:
-        console.print(f"[red]Data not found for {clean_symbol}_{timeframe}. Run 'act data backfill' first.[/red]")
-        sys.exit(1)
-
-    df = df.set_index("open_time").sort_index()
-
-    console.print(f"[cyan]Computing features ({len(df)} bars)...[/cyan]")
-    engine = FeatureEngine()
-    feature_df = engine.compute(df)
 
     strategy_map = {
         "EMA_Crossover": EMACrossoverStrategy,
@@ -398,31 +391,115 @@ def backtest(symbol: str, timeframe: str, capital: float, strategy: str) -> None
         console.print(f"[red]Unknown strategy: {strategy}. Available: {list(strategy_map.keys())}[/red]")
         sys.exit(1)
 
-    strat = strategy_map[strategy](version_id="backtest_v1")
-    bt_engine = BacktestEngine(BacktestConfig(initial_capital=capital))
+    feature_engine = FeatureEngine()
+    datasets: dict[str, pd.DataFrame] = {}
 
-    console.print(f"[cyan]Running backtest: {strategy}...[/cyan]")
-    result = bt_engine.run(strat, feature_df, capital)
+    for sym in symbol_list:
+        raw_df = pstore.load_candles(sym, timeframe)
+        if raw_df.empty:
+            console.print(f"[red]No local data for {sym}_{timeframe}. Run 'act data backfill --symbol {sym}' first.[/red]")
+            sys.exit(1)
 
-    table = Table(title=f"Backtest Results: {strategy} on {clean_symbol} {timeframe}")
+        console.print(f"[cyan]Computing features for [bold]{sym}[/bold] ({len(raw_df)} bars)...[/cyan]")
+        enriched_df = feature_engine.compute(raw_df)
+        datasets[sym] = enriched_df
+
+    strat_instance = strategy_map[strategy](version_id="backtest_v1")
+
+    engine_cfg = PortfolioEngineConfig(
+        initial_capital=capital,
+        run_monte_carlo=monte_carlo,
+        monte_carlo_iterations=1000,
+    )
+    portfolio_engine = MultiAssetBacktestEngine(config=engine_cfg)
+
+    console.print(f"[cyan]Executing multi-asset event simulation ({', '.join(symbol_list)})...[/cyan]")
+    result = portfolio_engine.run(strat_instance, datasets)
+    pm = result.portfolio_metrics
+
+    # 1. Portfolio Summary Table
+    table = Table(title=f"Portfolio Performance Scorecard: {strategy} ({timeframe})")
     table.add_column("Metric", style="cyan")
     table.add_column("Value", style="white")
 
-    table.add_row("Total Return", f"{result.total_return:.2%}")
-    table.add_row("CAGR", f"{result.cagr:.2%}")
-    table.add_row("Sharpe Ratio", f"{result.sharpe:.3f}")
-    table.add_row("Sortino Ratio", f"{result.sortino:.3f}")
-    table.add_row("Max Drawdown", f"{result.max_drawdown:.2%}")
-    table.add_row("Win Rate", f"{result.win_rate:.2%}")
-    table.add_row("Profit Factor", f"{result.profit_factor:.3f}")
-    table.add_row("Expectancy", f"{result.expectancy:.4f}")
-    table.add_row("Total Trades", str(result.num_trades))
-    table.add_row("Fees Paid", f"{result.fees_paid:.2f}")
+    table.add_row("Initial Capital", f"${capital:,.2f}")
+    final_eq = capital * (1.0 + pm.total_return)
+    table.add_row("Final Equity", f"${final_eq:,.2f}")
+    table.add_row("Total Return", f"[{'green' if pm.total_return >= 0 else 'red'}]{pm.total_return:.2%}[/]")
+    table.add_row("CAGR", f"{pm.cagr:.2%}")
+    table.add_row("Annualized Volatility", f"{pm.annualized_volatility:.2%}")
+    table.add_row("Sharpe Ratio", f"{pm.sharpe:.3f}")
+    table.add_row("Sortino Ratio", f"{pm.sortino:.3f}")
+    table.add_row("Calmar Ratio", f"{pm.calmar:.3f}")
+    table.add_row("Omega Ratio", f"{pm.omega_ratio:.3f}")
+    table.add_row("Max Drawdown", f"[red]{pm.max_drawdown:.2%}[/red]")
+    table.add_row("Max Drawdown Duration", f"{pm.max_drawdown_duration_bars} bars")
+    table.add_row("Value at Risk (95%)", f"{pm.var_95:.2%}")
+    table.add_row("Conditional VaR (95%)", f"{pm.cvar_95:.2%}")
+    table.add_row("Win Rate", f"{pm.win_rate:.2%}")
+    table.add_row("Profit Factor", f"{pm.profit_factor:.3f}")
+    table.add_row("Payoff Ratio", f"{pm.payoff_ratio:.3f}")
+    table.add_row("Total Trades", str(pm.num_trades))
+    table.add_row("Total Fees Paid", f"${pm.fees_paid:,.2f}")
+    table.add_row("Total Slippage Cost", f"${pm.slippage_paid:,.2f}")
+    table.add_row("Net Funding Accrued", f"${pm.funding_paid:,.2f}")
 
     console.print(table)
+
+    # 2. Per-Asset Breakdown Table
+    if len(symbol_list) > 1:
+        sym_table = Table(title="Per-Asset Performance Breakdown")
+        sym_table.add_column("Symbol", style="cyan")
+        sym_table.add_column("Trades", justify="right", style="white")
+        sym_table.add_column("Win Rate", justify="right", style="green")
+        sym_table.add_column("Profit Factor", justify="right", style="yellow")
+        sym_table.add_column("Total Fees", justify="right", style="magenta")
+
+        for sym, sm in result.per_symbol_metrics.items():
+            sym_table.add_row(
+                sym,
+                str(sm.num_trades),
+                f"{sm.win_rate:.2%}",
+                f"{sm.profit_factor:.2f}" if sm.profit_factor != float("inf") else "N/A",
+                f"${sm.fees_paid:,.2f}",
+            )
+        console.print(sym_table)
+
+    # 3. Monte Carlo Robustness Table
+    if result.monte_carlo and result.monte_carlo.trades_sampled > 0:
+        mc = result.monte_carlo
+        mc_table = Table(title=f"Monte Carlo Robustness Analysis ({mc.iterations} Iterations)")
+        mc_table.add_column("Metric", style="cyan")
+        mc_table.add_column("5th Percentile", style="red")
+        mc_table.add_column("Median (50th)", style="yellow")
+        mc_table.add_column("95th Percentile", style="green")
+
+        mc_table.add_row(
+            "Total Return",
+            f"{mc.return_5th_pct:.2%}",
+            f"{mc.median_return:.2%}",
+            f"{mc.return_95th_pct:.2%}",
+        )
+        mc_table.add_row(
+            "Max Drawdown (Worst)",
+            f"[red]{mc.max_drawdown_95th_pct:.2%}[/red]",
+            f"{mc.median_max_drawdown:.2%}",
+            f"-",
+        )
+        mc_table.add_row(
+            "Sharpe Ratio",
+            f"{mc.sharpe_5th_pct:.2f}",
+            f"{mc.median_sharpe:.2f}",
+            "-",
+        )
+        mc_table.add_row("P(Drawdown > 10%)", f"{mc.prob_drawdown_exceeds_10pct:.1%}", "-", "-")
+        mc_table.add_row("P(Drawdown > 15%)", f"{mc.prob_drawdown_exceeds_15pct:.1%}", "-", "-")
+
+        console.print(mc_table)
+
     console.print()
     console.print(
-        "[yellow]NOTE: Backtested performance is NOT indicative of future results.[/yellow]"
+        "[dim yellow]IMPORTANT: Backtested and simulated performance does not guarantee future results.[/dim yellow]"
     )
 
 
