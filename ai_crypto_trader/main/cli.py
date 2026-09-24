@@ -668,6 +668,164 @@ def validate(symbol: str, timeframe: str, strategy: str, windows: int) -> None:
     console.print(f"\n[{verdict_style}]Final Verdict: {sc_eval.summary_verdict}[/{verdict_style}]")
 
 
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ML TRAINING & MODEL MANAGEMENT COMMANDS
+# ─────────────────────────────────────────────────────────────────────────────
+
+@main.command()
+@click.option("--symbol", default="BTCUSDT", help="Trading pair symbol")
+@click.option("--timeframe", default="1h", help="Candle timeframe")
+@click.option(
+    "--model",
+    "model_type",
+    default="xgboost",
+    type=click.Choice(["xgboost", "lightgbm", "random_forest", "logistic_regression"]),
+    help="Machine learning algorithm",
+)
+@click.option(
+    "--target",
+    "target_type",
+    default="direction",
+    type=click.Choice(["direction", "tp_before_sl", "significant_up"]),
+    help="Target prediction variable",
+)
+@click.option("--horizon", default=12, type=int, help="Forward prediction horizon in bars")
+@click.option("--cv-folds", default=5, type=int, help="Number of Purged K-Fold splits")
+@click.option("--test-size", default=0.20, type=float, help="Fraction for holdout test split")
+def train(
+    symbol: str,
+    timeframe: str,
+    model_type: str,
+    target_type: str,
+    horizon: int,
+    cv_folds: int,
+    test_size: float,
+) -> None:
+    """Train and evaluate a machine learning trading model."""
+    from ai_crypto_trader.ingestion.parquet_store import ParquetStore
+    from ai_crypto_trader.training.trainer import ModelTrainer
+
+    store = ParquetStore()
+    df = store.load_candles(symbol, timeframe)
+    if df is None or len(df) == 0:
+        console.print(f"[red]No historical data found for {symbol} {timeframe}.[/red]")
+        sys.exit(1)
+
+    console.print(f"[bold cyan]Training {model_type.upper()} model for {symbol} ({len(df)} bars)...[/bold cyan]")
+    trainer = ModelTrainer()
+
+    try:
+        result = trainer.train(
+            df=df,
+            symbol=symbol,
+            timeframe=timeframe,
+            model_type=model_type,
+            target_type=target_type,
+            horizon=horizon,
+            cv_folds=cv_folds,
+            test_size=test_size,
+        )
+    except Exception as e:
+        console.print(f"[red]Training failed: {e}[/red]")
+        sys.exit(1)
+
+    # 1. Cross-Validation Results Table
+    cv_table = Table(title=f"Purged K-Fold ({cv_folds} folds) Cross-Validation Performance")
+    cv_table.add_column("Metric", style="cyan")
+    cv_table.add_column("Mean +/- Std", style="white")
+
+    for k in ["accuracy", "balanced_accuracy", "f1", "roc_auc", "precision", "recall", "brier_score"]:
+        mean_val = result.cv_metrics.get(f"cv_{k}_mean", 0.0)
+        std_val = result.cv_metrics.get(f"cv_{k}_std", 0.0)
+        cv_table.add_row(k.replace("_", " ").title(), f"{mean_val:.4f} +/- {std_val:.4f}")
+
+    console.print(cv_table)
+
+    # 2. Holdout Test Evaluation Table
+    test_table = Table(title="Out-of-Sample Holdout Test Evaluation")
+    test_table.add_column("Metric", style="cyan")
+    test_table.add_column("Score", style="white")
+
+    for k, v in result.test_metrics.items():
+        test_table.add_row(k.replace("_", " ").title(), f"{v:.4f}")
+
+    console.print(test_table)
+
+    # 3. Simulated Financial PnL Table
+    sim_table = Table(title="Simulated Strategy Trading Returns (Holdout Test)")
+    sim_table.add_column("Financial Metric", style="cyan")
+    sim_table.add_column("Result", style="white")
+
+    sim = result.simulated_trading
+    sim_table.add_row("Simulated Strategy Return", f"{sim.get('cumulative_return', 0.0):.2%}")
+    sim_table.add_row("Underlying Buy & Hold Return", f"{sim.get('market_return', 0.0):.2%}")
+    sim_table.add_row("Signal Win Rate", f"{sim.get('win_rate', 0.0):.2%}")
+    sim_table.add_row("Profit Factor", f"{sim.get('profit_factor', 0.0):.2f}")
+    sim_table.add_row("Total Signals Generated", str(sim.get('trade_count', 0)))
+    sim_table.add_row("Active Signal Bars", str(sim.get('active_signal_bars', 0)))
+
+    console.print(sim_table)
+
+    # 4. Top Feature Importances Table
+    imp_table = Table(title="Top 10 Most Predictive Features")
+    imp_table.add_column("Rank", justify="center")
+    imp_table.add_column("Feature", style="cyan")
+    imp_table.add_column("Importance", style="white")
+
+    top_feats = list(result.feature_importances.items())[:10]
+    for rank, (feat, score) in enumerate(top_feats, start=1):
+        imp_table.add_row(str(rank), feat, f"{score:.4f}")
+
+    console.print(imp_table)
+    console.print(f"\n[green bold]Model artifact successfully persisted to:[/green bold] {result.artifact_path}")
+
+
+@main.group()
+def models() -> None:
+    """Manage trained machine learning models."""
+    pass
+
+
+@models.command("list")
+def list_models() -> None:
+    """List all saved model artifacts."""
+    from pathlib import Path
+    models_dir = Path("data/models")
+    if not models_dir.exists():
+        console.print("[yellow]No models directory found.[/yellow]")
+        return
+
+    subdirs = [p for p in models_dir.iterdir() if p.is_dir() and (p / "training_summary.json").exists()]
+    if not subdirs:
+        console.print("[yellow]No trained models found.[/yellow]")
+        return
+
+    table = Table(title="Trained Machine Learning Models")
+    table.add_column("Model Directory", style="cyan")
+    table.add_column("Model Type", style="white")
+    table.add_column("Symbol", style="white")
+    table.add_column("Target", style="white")
+    table.add_column("Test Acc", style="white")
+    table.add_column("Created At", style="white")
+
+    for d in sorted(subdirs, key=lambda p: p.stat().st_mtime, reverse=True):
+        import json
+        with open(d / "training_summary.json", "r", encoding="utf-8") as f:
+            summary = json.load(f)
+        test_acc = summary.get("test_metrics", {}).get("accuracy", 0.0)
+        table.add_row(
+            d.name,
+            summary.get("model_type", "unknown"),
+            summary.get("symbol", "unknown"),
+            summary.get("target", "unknown"),
+            f"{test_acc:.2%}",
+            summary.get("created_at", "")[:19].replace("T", " "),
+        )
+
+    console.print(table)
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # INFO COMMAND
 # ─────────────────────────────────────────────────────────────────────────────

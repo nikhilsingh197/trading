@@ -97,8 +97,8 @@ make test-unit
 | 4 | ✅ **DONE** | Advanced backtesting engine (Multi-asset portfolio, dynamic slippage, funding, Monte Carlo) |
 | 5 | ✅ **DONE** | Additional rule-based strategies (Mean Reversion, Breakout, MTF Trend, Ensemble) |
 | 6 | ✅ **DONE** | Walk-forward validation & parameter stability testing (rolling windows, cliff detection, DSR, scorecard) |
-| 7 | 🔲 Next | ML research pipeline |
-| 8 | 🔲 | Paper trading (live data) |
+| 7 | ✅ **DONE** | ML research pipeline (feature selector, Purged K-Fold CV, model zoo: XGBoost/LightGBM/RF/Logistic, trainer, MLSignalStrategy) |
+| 8 | 🔲 Next | Paper trading (live data) |
 | 9 | 🔲 | Dashboard (React) |
 | 10 | 🔲 | Full risk engine |
 | 11 | 🔲 | Exchange integration (testnet) |
