@@ -1,0 +1,61 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Virtual environments
+venv/
+env/
+.env
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Data (large files not committed)
+data/raw/
+data/processed/
+data/live/
+data/models/
+logs/
+
+# Reports (generated)
+data/reports/
+
+# Database
+*.db
+*.sqlite
+
+# Secrets (NEVER commit)
+*.key
+*.pem
+*.secret
+secrets/
+
+# Test artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Node / dashboard
+dashboard/node_modules/
+dashboard/dist/
+dashboard/.env
+
+# Docker
+.docker/
+
+# OS
+.DS_Store
+Thumbs.db

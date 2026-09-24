@@ -1,0 +1,199 @@
+version: "3.9"
+
+# =============================================================================
+# AI Crypto Trader — Docker Compose
+# =============================================================================
+# Services:
+#   postgres    - TimescaleDB (PostgreSQL + time-series extension)
+#   redis       - Cache, Pub/Sub, Celery broker
+#   api         - FastAPI backend
+#   worker      - Celery workers (training/research/monitoring)
+#   ingestion   - WebSocket + REST data collectors
+#   dashboard   - React frontend (nginx)
+#   prometheus  - Metrics scraping
+#   grafana     - Monitoring dashboards
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # TimescaleDB (PostgreSQL with time-series extension)
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: timescale/timescaledb:latest-pg15
+    container_name: act_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: crypto_trader
+      POSTGRES_USER: trader
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme_secure_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U trader -d crypto_trader"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ---------------------------------------------------------------------------
+  # Redis
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: act_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ---------------------------------------------------------------------------
+  # FastAPI Backend
+  # ---------------------------------------------------------------------------
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: api
+    container_name: act_api
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://trader:${POSTGRES_PASSWORD:-changeme_secure_password}@postgres:5432/crypto_trader
+      DATABASE_SYNC_URL: postgresql+psycopg2://trader:${POSTGRES_PASSWORD:-changeme_secure_password}@postgres:5432/crypto_trader
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    volumes:
+      - model_artifacts:/app/data/models
+      - report_output:/app/data/reports
+
+  # ---------------------------------------------------------------------------
+  # Celery Workers
+  # ---------------------------------------------------------------------------
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: worker
+    container_name: act_worker
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://trader:${POSTGRES_PASSWORD:-changeme_secure_password}@postgres:5432/crypto_trader
+      DATABASE_SYNC_URL: postgresql+psycopg2://trader:${POSTGRES_PASSWORD:-changeme_secure_password}@postgres:5432/crypto_trader
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - model_artifacts:/app/data/models
+      - report_output:/app/data/reports
+    command: celery -A ai_crypto_trader.workers.celery_app worker --loglevel=info --concurrency=4
+
+  # ---------------------------------------------------------------------------
+  # Data Ingestion Service
+  # ---------------------------------------------------------------------------
+  ingestion:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: ingestion
+    container_name: act_ingestion
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://trader:${POSTGRES_PASSWORD:-changeme_secure_password}@postgres:5432/crypto_trader
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: python -m ai_crypto_trader.main.ingestion_service
+
+  # ---------------------------------------------------------------------------
+  # Dashboard (React)
+  # ---------------------------------------------------------------------------
+  dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile.dashboard
+    container_name: act_dashboard
+    restart: unless-stopped
+    ports:
+      - "${DASHBOARD_PORT:-3000}:80"
+    environment:
+      VITE_API_URL: http://localhost:${API_PORT:-8000}
+    depends_on:
+      - api
+
+  # ---------------------------------------------------------------------------
+  # Prometheus
+  # ---------------------------------------------------------------------------
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: act_prometheus
+    restart: unless-stopped
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=30d'
+
+  # ---------------------------------------------------------------------------
+  # Grafana
+  # ---------------------------------------------------------------------------
+  grafana:
+    image: grafana/grafana:latest
+    container_name: act_grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-changeme}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
+
+volumes:
+  postgres_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:
+  model_artifacts:
+  report_output:
+
+networks:
+  default:
+    name: act_network
