@@ -99,8 +99,8 @@ make test-unit
 | 6 | ✅ **DONE** | Walk-forward validation & parameter stability testing (rolling windows, cliff detection, DSR, scorecard) |
 | 7 | ✅ **DONE** | ML research pipeline (feature selector, Purged K-Fold CV, model zoo: XGBoost/LightGBM/RF/Logistic, trainer, MLSignalStrategy) |
 | 8 | ✅ **DONE** | Paper trading engine (OrderMatcher, PaperBroker, PaperPortfolio, OCO brackets, PaperMonitor, live/replay PaperSession) |
-| 9 | 🔲 Next | Dashboard (React) |
-| 10 | 🔲 | Full risk engine |
+| 9 | ✅ **DONE** | Dashboard & API (FastAPI REST + WebSocket feeds, interactive mission control dashboard artifact) |
+| 10 | 🔲 Next | Full risk engine |
 | 11 | 🔲 | Exchange integration (testnet) |
 | 12 | 🔲 | Production monitoring |
 | 13 | 🔲 | Controlled live deployment |

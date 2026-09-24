@@ -53,13 +53,39 @@ def create_app() -> FastAPI:
     )
 
     # Register routes
-    from ai_crypto_trader.api.routes import system
+    from ai_crypto_trader.api.routes import (
+        models,
+        portfolio,
+        positions,
+        strategies,
+        system,
+        trades,
+        websocket,
+    )
     app.include_router(system.router, prefix="/api/v1", tags=["system"])
+    app.include_router(portfolio.router, prefix="/api/v1", tags=["portfolio"])
+    app.include_router(positions.router, prefix="/api/v1", tags=["positions"])
+    app.include_router(trades.router, prefix="/api/v1", tags=["trades"])
+    app.include_router(strategies.router, prefix="/api/v1", tags=["strategies"])
+    app.include_router(models.router, prefix="/api/v1", tags=["models"])
+    app.include_router(websocket.router, prefix="/api/v1", tags=["websocket"])
 
     @app.get("/health")
     async def health_check():
         """Health check endpoint for Docker/load balancer."""
         return {"status": "ok", "version": "0.1.0"}
+
+    @app.get("/dashboard")
+    @app.get("/")
+    async def dashboard_view():
+        """Serve the interactive HTML mission control dashboard."""
+        from pathlib import Path
+        from fastapi.responses import HTMLResponse
+        artifact_path = Path("C:/Users/singh/.gemini/antigravity/brain/00611cef-b266-4ba6-91ef-c84fca3d4fbc/dashboard.html")
+        if artifact_path.exists():
+            with open(artifact_path, "r", encoding="utf-8") as f:
+                return HTMLResponse(content=f.read())
+        return HTMLResponse(content="<h1>AI Crypto Trader Dashboard</h1><p>Initializing...</p>")
 
     return app
 
