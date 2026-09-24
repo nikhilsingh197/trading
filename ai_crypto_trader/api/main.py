@@ -75,6 +75,17 @@ def create_app() -> FastAPI:
         """Health check endpoint for Docker/load balancer."""
         return {"status": "ok", "version": "0.1.0"}
 
+    @app.get("/metrics")
+    async def prometheus_metrics():
+        """Prometheus metrics exposition endpoint."""
+        from fastapi.responses import PlainTextResponse
+        from ai_crypto_trader.monitoring.performance_monitor import PrometheusPerformanceMonitor
+        monitor = getattr(app.state, "metrics_monitor", None)
+        if not monitor:
+            monitor = PrometheusPerformanceMonitor()
+            app.state.metrics_monitor = monitor
+        return PlainTextResponse(monitor.export_metrics(), media_type="text/plain; version=0.0.4; charset=utf-8")
+
     @app.get("/dashboard")
     @app.get("/")
     async def dashboard_view():
