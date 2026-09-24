@@ -826,6 +826,207 @@ def list_models() -> None:
     console.print(table)
 
 
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PAPER TRADING COMMANDS
+# ─────────────────────────────────────────────────────────────────────────────
+
+@main.group()
+def paper() -> None:
+    """Run and monitor paper trading sessions."""
+    pass
+
+
+@paper.command("run")
+@click.option("--symbol", default="BTCUSDT", help="Trading pair symbol")
+@click.option("--timeframe", default="1h", help="Candle timeframe")
+@click.option(
+    "--strategy",
+    "strategy_name",
+    default="EMA_Crossover",
+    type=click.Choice([
+        "EMA_Crossover",
+        "Bollinger_RSI",
+        "Donchian_Breakout",
+        "MultiTimeframe_Trend",
+        "Ensemble",
+        "ML_Signal",
+    ]),
+    help="Trading strategy",
+)
+@click.option("--capital", default=10_000.0, type=float, help="Initial paper balance")
+@click.option("--risk-pct", default=1.0, type=float, help="Risk per trade as % of equity")
+@click.option("--bars", default=0, type=int, help="Limit number of recent candles (0 for all)")
+def run_paper(
+    symbol: str,
+    timeframe: str,
+    strategy_name: str,
+    capital: float,
+    risk_pct: float,
+    bars: int,
+) -> None:
+    """Run an end-to-end paper trading session on market data."""
+    import asyncio
+    from ai_crypto_trader.core.interfaces import Candle
+    from ai_crypto_trader.ingestion.parquet_store import ParquetStore
+    from ai_crypto_trader.paper_trading.paper_session import PaperSession
+    from ai_crypto_trader.strategies import (
+        BollingerRSIMeanReversion,
+        DonchianBreakoutStrategy,
+        EMACrossoverStrategy,
+        MLSignalStrategy,
+        MultiTimeframeTrendStrategy,
+        StrategyEnsemble,
+    )
+
+    store = ParquetStore()
+    df = store.load_candles(symbol, timeframe)
+    if df is None or len(df) == 0:
+        console.print(f"[red]No historical data found for {symbol} {timeframe}.[/red]")
+        sys.exit(1)
+
+    if bars > 0 and len(df) > bars:
+        df = df.iloc[-bars:].reset_index(drop=True)
+
+    # Instantiate Strategy
+    strat: Any
+    if strategy_name == "EMA_Crossover":
+        strat = EMACrossoverStrategy("paper_ema", {"fast_ema": 9, "slow_ema": 21})
+    elif strategy_name == "Bollinger_RSI":
+        strat = BollingerRSIMeanReversion("paper_mr", {"rsi_period": 14})
+    elif strategy_name == "Donchian_Breakout":
+        strat = DonchianBreakoutStrategy("paper_dc", {"dc_period": 20})
+    elif strategy_name == "MultiTimeframe_Trend":
+        strat = MultiTimeframeTrendStrategy("paper_mtf", {"fast_period": 9})
+    elif strategy_name == "Ensemble":
+        strat = StrategyEnsemble(
+            version_id="paper_ens",
+            strategies=[
+                EMACrossoverStrategy("ens_ema", {}),
+                BollingerRSIMeanReversion("ens_mr", {}),
+                DonchianBreakoutStrategy("ens_dc", {}),
+            ],
+        )
+    elif strategy_name == "ML_Signal":
+        from pathlib import Path
+        from ai_crypto_trader.models.registry import ModelRegistry
+        models_dir = Path("data/models")
+        subdirs = [p for p in models_dir.iterdir() if p.is_dir() and (p / "metadata.json").exists()]
+        if not subdirs:
+            console.print("[red]No trained ML models found. Run 'act train' first.[/red]")
+            sys.exit(1)
+        latest_model_dir = max(subdirs, key=lambda p: p.stat().st_mtime)
+        model = ModelRegistry.load_model(latest_model_dir)
+        strat = MLSignalStrategy(model=model, version_id="paper_ml", name="ML_Signal")
+        console.print(f"[dim]Loaded model: {model.name} ({model.model_type}) from {latest_model_dir.name}[/dim]")
+
+    # Convert DataFrame rows to Candle objects
+    candles: list[Candle] = []
+    for _, row in df.iterrows():
+        candles.append(
+            Candle(
+                symbol=symbol,
+                timeframe=timeframe,
+                open_time=row["open_time"],
+                open=float(row["open"]),
+                high=float(row["high"]),
+                low=float(row["low"]),
+                close=float(row["close"]),
+                volume=float(row["volume"]),
+                close_time=row.get("close_time", row["open_time"]),
+            )
+        )
+
+    console.print(f"[bold cyan]Running Paper Trading Session ({len(candles)} candles)...[/bold cyan]")
+    session = PaperSession(
+        strategy=strat,
+        symbol=symbol,
+        timeframe=timeframe,
+        initial_capital=capital,
+        risk_per_trade_pct=risk_pct / 100.0,
+    )
+
+    async def _execute() -> Any:
+        return await session.run_replay(candles)
+
+    stats = asyncio.run(_execute())
+
+    # 1. Performance Summary Table
+    perf_table = Table(title=f"Paper Trading Performance - {symbol} ({strategy_name})")
+    perf_table.add_column("Metric", style="cyan")
+    perf_table.add_column("Value", style="white")
+
+    ret_color = "green" if stats.total_return_pct >= 0 else "red"
+    perf_table.add_row("Initial Capital", f"${stats.initial_capital:,.2f}")
+    perf_table.add_row("Ending Equity", f"${stats.current_equity:,.2f}")
+    perf_table.add_row("Total Return", f"[{ret_color}]{stats.total_return_pct:+.2f}%[/{ret_color}]")
+    perf_table.add_row("Peak Equity", f"${stats.peak_equity:,.2f}")
+    perf_table.add_row("Current Drawdown", f"{stats.drawdown_pct:.2f}%")
+    perf_table.add_row("Max Drawdown", f"{stats.max_drawdown_pct:.2f}%")
+    perf_table.add_row("Total Trades", str(stats.total_trades))
+    perf_table.add_row("Winning Trades", str(stats.winning_trades))
+    perf_table.add_row("Losing Trades", str(stats.losing_trades))
+    perf_table.add_row("Win Rate", f"{stats.win_rate:.2%}")
+    perf_table.add_row("Profit Factor", f"{stats.profit_factor:.2f}")
+    perf_table.add_row("Total Fees Paid", f"${stats.total_fees:.2f}")
+    perf_table.add_row("System Status", f"[bold green]{stats.status}[/bold green]" if stats.status == "HEALTHY" else f"[bold red]{stats.status}[/bold red]")
+
+    console.print(perf_table)
+
+    # 2. Open Positions Table
+    open_positions = session.broker.portfolio.positions
+    if open_positions:
+        pos_table = Table(title="Current Open Paper Positions")
+        pos_table.add_column("Symbol", style="cyan")
+        pos_table.add_column("Side", style="white")
+        pos_table.add_column("Qty", style="white")
+        pos_table.add_column("Entry Price", style="white")
+        pos_table.add_column("Current Price", style="white")
+        pos_table.add_column("Unrealized PnL", style="white")
+
+        for p in open_positions.values():
+            pnl_c = "green" if p.unrealized_pnl >= 0 else "red"
+            pos_table.add_row(
+                p.symbol,
+                p.side.value,
+                f"{p.quantity:.4f}",
+                f"${p.entry_price:,.2f}",
+                f"${p.current_price:,.2f}",
+                f"[{pnl_c}]${p.unrealized_pnl:+,.2f} ({p.unrealized_pnl_pct:+.2f}%)[/{pnl_c}]",
+            )
+        console.print(pos_table)
+
+    # 3. Recent Trades Table
+    trades = session.broker.portfolio.trades_history
+    if trades:
+        trade_table = Table(title="Recent Paper Trades (Last 10)")
+        trade_table.add_column("Closed At", style="cyan")
+        trade_table.add_column("Side", style="white")
+        trade_table.add_column("Entry", style="white")
+        trade_table.add_column("Exit", style="white")
+        trade_table.add_column("PnL ($)", style="white")
+        trade_table.add_column("PnL (%)", style="white")
+        trade_table.add_column("Reason", style="white")
+
+        for t in trades[-10:]:
+            tc = "green" if t.pnl >= 0 else "red"
+            trade_table.add_row(
+                t.closed_at.strftime("%Y-%m-%d %H:%M"),
+                t.side.value,
+                f"${t.entry_price:,.2f}",
+                f"${t.exit_price:,.2f}",
+                f"[{tc}]${t.pnl:+,.2f}[/{tc}]",
+                f"[{tc}]{t.pnl_pct:+.2f}%[/{tc}]",
+                t.exit_reason,
+            )
+        console.print(trade_table)
+
+    # 4. Advancement Check
+    eligible, reason = session.monitor.check_advancement(stats)
+    verdict_style = "green bold" if eligible else "yellow"
+    console.print(f"\n[{verdict_style}]Advancement Review: {reason}[/{verdict_style}]")
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # INFO COMMAND
 # ─────────────────────────────────────────────────────────────────────────────

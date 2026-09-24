@@ -98,8 +98,8 @@ make test-unit
 | 5 | ✅ **DONE** | Additional rule-based strategies (Mean Reversion, Breakout, MTF Trend, Ensemble) |
 | 6 | ✅ **DONE** | Walk-forward validation & parameter stability testing (rolling windows, cliff detection, DSR, scorecard) |
 | 7 | ✅ **DONE** | ML research pipeline (feature selector, Purged K-Fold CV, model zoo: XGBoost/LightGBM/RF/Logistic, trainer, MLSignalStrategy) |
-| 8 | 🔲 Next | Paper trading (live data) |
-| 9 | 🔲 | Dashboard (React) |
+| 8 | ✅ **DONE** | Paper trading engine (OrderMatcher, PaperBroker, PaperPortfolio, OCO brackets, PaperMonitor, live/replay PaperSession) |
+| 9 | 🔲 Next | Dashboard (React) |
 | 10 | 🔲 | Full risk engine |
 | 11 | 🔲 | Exchange integration (testnet) |
 | 12 | 🔲 | Production monitoring |
