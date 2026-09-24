@@ -1,4 +1,9 @@
 """Monitoring, metrics, and statistical drift detection package."""
+from ai_crypto_trader.monitoring.disaster_recovery import (
+    DisasterRecovery,
+    RecoverySnapshot,
+    ShutdownReport,
+)
 from ai_crypto_trader.monitoring.drift_detector import (
     DriftDetector,
     DriftReport,
@@ -15,10 +20,13 @@ from ai_crypto_trader.monitoring.performance_monitor import (
 
 __all__ = [
     "ComponentHealth",
+    "DisasterRecovery",
     "DriftDetector",
     "DriftReport",
     "FeatureDriftResult",
     "HealthChecker",
     "PrometheusPerformanceMonitor",
+    "RecoverySnapshot",
+    "ShutdownReport",
     "SystemHealthStatus",
 ]
