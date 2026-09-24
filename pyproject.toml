@@ -31,7 +31,7 @@ dependencies = [
     "fastapi>=0.111,<1",
     "uvicorn[standard]>=0.29,<1",
     "websockets>=12.0,<14",
-    "httpx>=0.27,<1",
+    "httpx>=0.25,<1",
     "python-jose[cryptography]>=3.3,<4",
     "passlib[bcrypt]>=1.7,<2",
 
@@ -60,7 +60,7 @@ dependencies = [
     "cryptography>=42.0,<43",
 
     # ── Alerts ────────────────────────────────────────────────
-    "python-telegram-bot>=20.7,<21",
+    "python-telegram-bot>=20.7,<23",
     "aiosmtplib>=3.0,<4",
 
     # ── Reporting ─────────────────────────────────────────────
