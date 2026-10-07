@@ -23,6 +23,7 @@ COPY alembic/ ./alembic/
 COPY alembic.ini ./
 COPY dashboard.html ./
 COPY run_paper_trading.py ./
+COPY data/models/ ./data/models/
 
 # Create data directories
 RUN mkdir -p data/raw data/processed data/live data/models data/reports logs

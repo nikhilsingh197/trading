@@ -26,9 +26,17 @@ class PaperTradeRecord:
     fees: float
     opened_at: datetime
     closed_at: datetime
-    exit_reason: str
+    exit_reason: str = "SIGNAL"
     strategy_id: str | None = None
     duration_seconds: int = 0
+
+    @property
+    def trade_id(self) -> str:
+        return self.id
+
+    @property
+    def exit_time(self) -> datetime:
+        return self.closed_at
 
 
 @dataclass
@@ -95,6 +103,25 @@ class PaperPortfolio:
     def get_position(self, symbol: str) -> PaperPosition | None:
         return self.positions.get(symbol)
 
+    def get_all_positions(self) -> list[PaperPosition]:
+        return list(self.positions.values())
+
+    def close_position(self, symbol: str, exit_reason: str = "MANUAL") -> PaperTradeRecord | None:
+        if symbol not in self.positions:
+            return None
+        pos = self.positions[symbol]
+        fill_price = pos.current_price
+        side = Side.SELL if pos.side == Direction.LONG else Side.BUY
+        fee = fill_price * pos.quantity * 0.0006
+        return self.on_order_fill(
+            symbol=symbol,
+            side=side,
+            quantity=pos.quantity,
+            fill_price=fill_price,
+            fee=fee,
+            exit_reason=exit_reason,
+        )
+
     def _update_peak_equity(self) -> None:
         eq = self.total_equity
         if eq > self.peak_equity:
@@ -116,6 +143,23 @@ class PaperPortfolio:
             return 0.0
         dd = (self.peak_equity - self.total_equity) / self.peak_equity * 100.0
         return max(0.0, dd)
+
+    @property
+    def win_rate(self) -> float:
+        if not self.trades_history:
+            return 0.0
+        wins = sum(1 for t in self.trades_history if t.pnl > 0)
+        return wins / len(self.trades_history)
+
+    @property
+    def profit_factor(self) -> float:
+        if not self.trades_history:
+            return 0.0
+        gross_profit = sum(t.pnl for t in self.trades_history if t.pnl > 0)
+        gross_loss = abs(sum(t.pnl for t in self.trades_history if t.pnl < 0))
+        if gross_loss <= 1e-9:
+            return round(gross_profit, 2) if gross_profit > 0 else 0.0
+        return gross_profit / gross_loss
 
     def can_open_position(self, side: Side, fill_price: float, quantity: float, fee: float) -> bool:
         """Verify sufficient cash balance to fund the trade."""

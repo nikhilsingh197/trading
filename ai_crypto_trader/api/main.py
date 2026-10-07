@@ -21,11 +21,34 @@ log = get_logger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator:
     """Application startup and shutdown."""
+    import asyncio
+    from ai_crypto_trader.execution.live_ml_trader import get_live_trader
+
     settings = get_settings()
     configure_logging(settings.app_log_level)
     settings.ensure_directories()
     log.info("api_starting", env=settings.app_env, mode=settings.trading_mode)
+
+    # Initialize live ML trader and attach to app state
+    trader = get_live_trader()
+    app.state.live_trader = trader
+
+    async def _run_trading():
+        try:
+            await trader.backfill_and_sync(limit=500)
+            await trader.run_loop()
+        except asyncio.CancelledError:
+            pass
+        except Exception as e:
+            log.error("live_trader_background_error", error=str(e))
+
+    trading_task = asyncio.create_task(_run_trading(), name="live_trader_loop")
     yield
+    trading_task.cancel()
+    try:
+        await trading_task
+    except asyncio.CancelledError:
+        pass
     log.info("api_shutting_down")
 
 

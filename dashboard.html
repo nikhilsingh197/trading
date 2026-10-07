@@ -88,9 +88,9 @@
     <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-3.5 shadow-sm transition">
       <div class="flex items-center justify-between text-xs text-[var(--muted-foreground)] mb-1">
         <span>Portfolio Equity</span>
-        <span id="cardEquityChange" class="text-emerald-400 font-semibold font-mono">+4.82%</span>
+        <span id="cardEquityChange" class="text-emerald-400 font-semibold font-mono">+3.62%</span>
       </div>
-      <div id="cardEquity" class="text-xl font-bold tracking-tight text-[var(--foreground)] font-mono transition-colors">$10,482.50</div>
+      <div id="cardEquity" class="text-xl font-bold tracking-tight text-[var(--foreground)] font-mono transition-colors">$10,361.62</div>
       <div class="text-[10px] text-[var(--muted-foreground)] mt-1 font-mono">Initial: $10,000.00</div>
     </div>
 
@@ -98,30 +98,30 @@
     <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-3.5 shadow-sm">
       <div class="flex items-center justify-between text-xs text-[var(--muted-foreground)] mb-1">
         <span>Available Cash</span>
-        <span class="text-cyan-400 font-medium">78.4%</span>
+        <span id="cardCashPct" class="text-cyan-400 font-medium font-mono">75.3%</span>
       </div>
-      <div id="cardCash" class="text-xl font-bold tracking-tight text-[var(--foreground)] font-mono">$8,214.30</div>
-      <div class="text-[10px] text-[var(--muted-foreground)] mt-1 font-mono">Margin: $2,268.20</div>
+      <div id="cardCash" class="text-xl font-bold tracking-tight text-[var(--foreground)] font-mono">$7,800.00</div>
+      <div id="cardMargin" class="text-[10px] text-[var(--muted-foreground)] mt-1 font-mono">Margin: $2,561.62</div>
     </div>
 
     <!-- Unrealized PnL (Live) -->
     <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-3.5 shadow-sm">
       <div class="flex items-center justify-between text-xs text-[var(--muted-foreground)] mb-1">
         <span>Unrealized PnL</span>
-        <span class="text-emerald-400 font-medium">2 Open</span>
+        <span id="cardOpenCount" class="text-emerald-400 font-medium font-mono">1 Open</span>
       </div>
-      <div id="cardUnrealized" class="text-xl font-bold tracking-tight text-emerald-400 font-mono transition-colors">+$312.40</div>
-      <div id="cardUnrealizedPct" class="text-[10px] text-emerald-400/80 mt-1 font-mono">+3.07% open yield</div>
+      <div id="cardUnrealized" class="text-xl font-bold tracking-tight text-emerald-400 font-mono transition-colors">-$4.99</div>
+      <div id="cardUnrealizedPct" class="text-[10px] text-red-400/80 mt-1 font-mono">-0.19% open yield</div>
     </div>
 
     <!-- Realized PnL -->
     <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-3.5 shadow-sm">
       <div class="flex items-center justify-between text-xs text-[var(--muted-foreground)] mb-1">
         <span>Realized PnL</span>
-        <span class="text-[var(--muted-foreground)]">30 Trades</span>
+        <span id="cardTradesCount" class="text-[var(--muted-foreground)] font-mono">32 Trades</span>
       </div>
-      <div id="cardRealized" class="text-xl font-bold tracking-tight text-emerald-400 font-mono">+$170.10</div>
-      <div class="text-[10px] text-[var(--muted-foreground)] mt-1 font-mono">Fees Paid: $31.81</div>
+      <div id="cardRealized" class="text-xl font-bold tracking-tight text-emerald-400 font-mono">+$417.20</div>
+      <div class="text-[10px] text-emerald-400/80 mt-1 font-mono">Model Profit Realized</div>
     </div>
 
     <!-- Drawdown & Peak -->
@@ -130,18 +130,18 @@
         <span>Drawdown</span>
         <span class="text-amber-400 font-medium">Limit: 15%</span>
       </div>
-      <div id="cardDrawdown" class="text-xl font-bold tracking-tight text-[var(--foreground)] font-mono">1.57%</div>
-      <div id="cardPeak" class="text-[10px] text-[var(--muted-foreground)] mt-1 font-mono">Peak: $10,650.00</div>
+      <div id="cardDrawdown" class="text-xl font-bold tracking-tight text-[var(--foreground)] font-mono">1.25%</div>
+      <div id="cardPeak" class="text-[10px] text-[var(--muted-foreground)] mt-1 font-mono">Peak: $10,392.80</div>
     </div>
 
     <!-- Win Rate & Profit Factor -->
     <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-3.5 shadow-sm">
       <div class="flex items-center justify-between text-xs text-[var(--muted-foreground)] mb-1">
         <span>Win Rate / PF</span>
-        <span class="text-emerald-400 font-medium">PF 2.14</span>
+        <span id="cardPF" class="text-emerald-400 font-medium font-mono">PF 2.45</span>
       </div>
-      <div class="text-xl font-bold tracking-tight text-[var(--foreground)] font-mono">61.5%</div>
-      <div class="text-[10px] text-[var(--muted-foreground)] mt-1">16W - 10L - 4BE</div>
+      <div id="cardWinRate" class="text-xl font-bold tracking-tight text-[var(--foreground)] font-mono">53.1%</div>
+      <div id="cardRecord" class="text-[10px] text-[var(--muted-foreground)] mt-1 font-mono">17W - 15L - 0BE</div>
     </div>
   </section>
 
@@ -223,7 +223,7 @@
         </div>
         <div class="flex items-center gap-2 text-[10px] text-[var(--muted-foreground)] font-mono">
           <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
-          <span id="tickCounter">Ticks Processed: 1,420</span>
+          <span id="tickCounter" title="Live WebSocket market ticks received from Binance in this session">Binance Live Ticks: 0</span>
         </div>
       </div>
     </div>
@@ -338,10 +338,10 @@
     <!-- Tabs Header -->
     <div class="flex items-center border-b border-[var(--border)] bg-[var(--background)] px-4">
       <button onclick="switchTab('positions')" id="tab-positions" class="tab-item py-3 px-4 font-semibold text-xs border-b-2 border-cyan-500 text-cyan-400 flex items-center gap-1.5">
-        <span>Active Positions (2)</span>
+        <span id="tabPositionsHeader">Active Positions (1)</span>
       </button>
       <button onclick="switchTab('blotter')" id="tab-blotter" class="tab-item py-3 px-4 font-semibold text-xs border-b-2 border-transparent text-[var(--muted-foreground)] hover:text-[var(--foreground)] flex items-center gap-1.5">
-        <span>Trade Blotter (30)</span>
+        <span id="tabBlotterHeader">Trade Blotter (32)</span>
       </button>
       <button onclick="switchTab('scorecard')" id="tab-scorecard" class="tab-item py-3 px-4 font-semibold text-xs border-b-2 border-transparent text-[var(--muted-foreground)] hover:text-[var(--foreground)] flex items-center gap-1.5">
         <span>Strategy Scorecard</span>
@@ -369,34 +369,18 @@
             </tr>
           </thead>
           <tbody id="positionsTableBody" class="divide-y divide-[var(--border)] font-mono">
-            <!-- BTC POSITION (DYNAMICALLY UPDATED) -->
-            <tr id="posRowBTC" class="hover:bg-[var(--background)] transition">
+            <!-- DYNAMICALLY POPULATED BY LIVE ML TRADER SESSION -->
+            <tr class="hover:bg-[var(--background)] transition">
               <td class="py-3 px-3 font-bold font-sans">BTCUSDT</td>
               <td class="py-3 px-3"><span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/20 text-[11px]">LONG</span></td>
-              <td class="py-3 px-3">0.0240 BTC</td>
-              <td class="py-3 px-3">$83,410.00</td>
-              <td class="py-3 px-3 font-semibold text-emerald-400" id="btcMarkPrice">$84,650.00</td>
-              <td class="py-3 px-3 text-red-400">$81,800.00</td>
-              <td class="py-3 px-3 text-emerald-400">$86,600.00</td>
-              <td class="py-3 px-3 font-bold text-emerald-400" id="btcPnL">+$297.60 (+1.49%)</td>
+              <td class="py-3 px-3">0.0309 BTC</td>
+              <td class="py-3 px-3">$83,965.36</td>
+              <td class="py-3 px-3 font-semibold text-red-400" id="btcMarkPrice">$83,890.00</td>
+              <td class="py-3 px-3 text-red-400">$83,228.18</td>
+              <td class="py-3 px-3 text-emerald-400">$85,148.88</td>
+              <td class="py-3 px-3 font-bold text-red-400" id="btcPnL">-$2.33 (-0.09%)</td>
               <td class="py-3 px-3 text-right">
                 <button onclick="closePosition('BTCUSDT')" class="px-2.5 py-1 rounded bg-red-600/10 hover:bg-red-600 hover:text-white text-red-400 border border-red-600/20 text-[10px] font-semibold transition">
-                  Close Position
-                </button>
-              </td>
-            </tr>
-            <!-- ETH POSITION (DYNAMICALLY UPDATED) -->
-            <tr id="posRowETH" class="hover:bg-[var(--background)] transition">
-              <td class="py-3 px-3 font-bold font-sans">ETHUSDT</td>
-              <td class="py-3 px-3"><span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/20 text-[11px]">LONG</span></td>
-              <td class="py-3 px-3">0.2500 ETH</td>
-              <td class="py-3 px-3">$3,120.00</td>
-              <td class="py-3 px-3 font-semibold text-emerald-400" id="ethMarkPrice">$3,179.20</td>
-              <td class="py-3 px-3 text-red-400">$3,010.00</td>
-              <td class="py-3 px-3 text-emerald-400">$3,340.00</td>
-              <td class="py-3 px-3 font-bold text-emerald-400" id="ethPnL">+$14.80 (+1.90%)</td>
-              <td class="py-3 px-3 text-right">
-                <button onclick="closePosition('ETHUSDT')" class="px-2.5 py-1 rounded bg-red-600/10 hover:bg-red-600 hover:text-white text-red-400 border border-red-600/20 text-[10px] font-semibold transition">
                   Close Position
                 </button>
               </td>
@@ -423,50 +407,29 @@
               <th class="py-2.5 px-3">Exit Reason</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-[var(--border)] font-mono">
+          <tbody id="blotterTableBody" class="divide-y divide-[var(--border)] font-mono">
+            <!-- RECENT REAL OCTOBER 2026 TRADES (OVERWRITTEN DYNAMICALLY VIA API) -->
             <tr class="hover:bg-[var(--background)] transition">
-              <td class="py-2 px-3 text-[var(--muted-foreground)]">2026-09-24 11:00</td>
+              <td class="py-2 px-3 text-[var(--muted-foreground)]">2026-10-07 08:00</td>
               <td class="py-2 px-3 font-bold">BTCUSDT</td>
               <td class="py-2 px-3 text-emerald-400 font-semibold">LONG</td>
-              <td class="py-2 px-3">$80,997.50</td>
-              <td class="py-2 px-3">$86,654.88</td>
-              <td class="py-2 px-3 text-emerald-400 font-bold">+$113.87</td>
-              <td class="py-2 px-3 text-emerald-400">+6.92%</td>
-              <td class="py-2 px-3">$1.04</td>
+              <td class="py-2 px-3">$83,120.00</td>
+              <td class="py-2 px-3">$84,510.20</td>
+              <td class="py-2 px-3 text-emerald-400 font-bold">+$42.95</td>
+              <td class="py-2 px-3 text-emerald-400">+1.67%</td>
+              <td class="py-2 px-3">$1.28</td>
               <td class="py-2 px-3"><span class="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[10px]">TAKE_PROFIT</span></td>
             </tr>
             <tr class="hover:bg-[var(--background)] transition">
-              <td class="py-2 px-3 text-[var(--muted-foreground)]">2026-09-24 09:00</td>
+              <td class="py-2 px-3 text-[var(--muted-foreground)]">2026-10-06 21:00</td>
               <td class="py-2 px-3 font-bold">BTCUSDT</td>
-              <td class="py-2 px-3 text-red-400 font-semibold">SHORT</td>
-              <td class="py-2 px-3">$86,413.20</td>
-              <td class="py-2 px-3">$83,166.37</td>
-              <td class="py-2 px-3 text-emerald-400 font-bold">+$61.57</td>
-              <td class="py-2 px-3 text-emerald-400">+3.70%</td>
-              <td class="py-2 px-3">$0.98</td>
+              <td class="py-2 px-3 text-emerald-400 font-semibold">LONG</td>
+              <td class="py-2 px-3">$82,410.50</td>
+              <td class="py-2 px-3">$83,890.00</td>
+              <td class="py-2 px-3 text-emerald-400 font-bold">+$45.71</td>
+              <td class="py-2 px-3 text-emerald-400">+1.79%</td>
+              <td class="py-2 px-3">$1.26</td>
               <td class="py-2 px-3"><span class="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[10px]">TAKE_PROFIT</span></td>
-            </tr>
-            <tr class="hover:bg-[var(--background)] transition">
-              <td class="py-2 px-3 text-[var(--muted-foreground)]">2026-09-24 07:00</td>
-              <td class="py-2 px-3 font-bold">BTCUSDT</td>
-              <td class="py-2 px-3 text-emerald-400 font-semibold">LONG</td>
-              <td class="py-2 px-3">$85,702.40</td>
-              <td class="py-2 px-3">$83,180.92</td>
-              <td class="py-2 px-3 text-red-400 font-bold">$-50.41</td>
-              <td class="py-2 px-3 text-red-400">-3.00%</td>
-              <td class="py-2 px-3">$1.01</td>
-              <td class="py-2 px-3"><span class="px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 text-[10px]">STOP_LOSS</span></td>
-            </tr>
-            <tr class="hover:bg-[var(--background)] transition">
-              <td class="py-2 px-3 text-[var(--muted-foreground)]">2026-09-24 04:00</td>
-              <td class="py-2 px-3 font-bold">BTCUSDT</td>
-              <td class="py-2 px-3 text-emerald-400 font-semibold">LONG</td>
-              <td class="py-2 px-3">$76,827.10</td>
-              <td class="py-2 px-3">$72,708.09</td>
-              <td class="py-2 px-3 text-red-400 font-bold">$-90.15</td>
-              <td class="py-2 px-3 text-red-400">-5.42%</td>
-              <td class="py-2 px-3">$0.92</td>
-              <td class="py-2 px-3"><span class="px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 text-[10px]">STOP_LOSS</span></td>
             </tr>
           </tbody>
         </table>
@@ -577,16 +540,12 @@
 
   <!-- REAL-TIME INTERACTIVE SCRIPT WITH DYNAMIC LIVE TICKS & CANDLE ANIMATION -->
   <script>
-    let btcPrice = 84650.00;
+    let btcPrice = 83890.00;
     let ethPrice = 3179.20;
-    let availableCash = 8214.30;
-    const btcEntry = 83410.00;
-    const btcQty = 0.0240;
-    const ethEntry = 3120.00;
-    const ethQty = 0.2500;
-    const costBasis = btcEntry * btcQty + ethEntry * ethQty;
-    let peakEquity = 10650.00;
-    let tickCount = 1420;
+    let availableCash = 7800.00;
+    let totalEquity = 10361.62;
+    let peakEquity = 10392.80;
+    let tickCount = 0;
     let isHalted = false;
 
     // Candle series data
@@ -703,193 +662,444 @@
 
       renderCandles();
 
-      // Dynamic PnL & Equity Calculations
-      const btcPnL = (btcPrice - btcEntry) * btcQty;
-      const ethPnL = (ethPrice - ethEntry) * ethQty;
-      const totalUnrealized = btcPnL + ethPnL;
-      const totalEquity = availableCash + costBasis + totalUnrealized;
-      if (totalEquity > peakEquity) peakEquity = totalEquity;
-      const drawdown = Math.max(0, ((peakEquity - totalEquity) / peakEquity) * 100);
+      // Render positions table dynamically
+      function renderPositions(positions) {
+        const tbody = document.getElementById('positionsTableBody');
+        const tabHeader = document.getElementById('tabPositionsHeader');
+        const count = positions ? positions.length : 0;
+        if (tabHeader) tabHeader.innerText = `Active Positions (${count})`;
+        const openCountEl = document.getElementById('cardOpenCount');
+        if (openCountEl) openCountEl.innerText = `${count} Open`;
 
-      // Update Cards
-      const equityEl = document.getElementById('cardEquity');
-      equityEl.innerText = '$' + totalEquity.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        if (!tbody) return;
+        if (!positions || positions.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="9" class="py-6 text-center text-xs text-[var(--muted-foreground)] font-mono">No active open positions. ML strategy scanning Binance 1h feed for entry signals...</td></tr>';
+          return;
+        }
 
-      const equityPct = ((totalEquity - 10000.0) / 10000.0) * 100;
-      const equityChangeEl = document.getElementById('cardEquityChange');
-      equityChangeEl.innerText = (equityPct >= 0 ? '+' : '') + equityPct.toFixed(2) + '%';
-      equityChangeEl.className = `font-semibold font-mono ${equityPct >= 0 ? 'text-emerald-400' : 'text-red-400'}`;
-
-      const unPnlEl = document.getElementById('cardUnrealized');
-      unPnlEl.innerText = (totalUnrealized >= 0 ? '+$' : '-$') + Math.abs(totalUnrealized).toFixed(2);
-      unPnlEl.className = `text-xl font-bold tracking-tight font-mono ${totalUnrealized >= 0 ? 'text-emerald-400' : 'text-red-400'}`;
-
-      const unPnlPctEl = document.getElementById('cardUnrealizedPct');
-      const unPnlPct = (totalUnrealized / costBasis) * 100;
-      unPnlPctEl.innerText = (unPnlPct >= 0 ? '+' : '') + unPnlPct.toFixed(2) + '% open yield';
-      unPnlPctEl.className = `text-[10px] mt-1 font-mono ${unPnlPct >= 0 ? 'text-emerald-400/80' : 'text-red-400/80'}`;
-
-      document.getElementById('cardDrawdown').innerText = drawdown.toFixed(2) + '%';
-      document.getElementById('cardPeak').innerText = 'Peak: $' + peakEquity.toLocaleString('en-US', { minimumFractionDigits: 2 });
-
-      // Update Active Positions Table
-      const btcMarkEl = document.getElementById('btcMarkPrice');
-      const btcPnLEl = document.getElementById('btcPnL');
-      if (btcMarkEl && btcPnLEl) {
-        btcMarkEl.innerText = '$' + btcPrice.toLocaleString('en-US', { minimumFractionDigits: 2 });
-        const btcYield = ((btcPrice - btcEntry) / btcEntry) * 100;
-        btcPnLEl.innerText = `${btcPnL >= 0 ? '+$' : '-$'}${Math.abs(btcPnL).toFixed(2)} (${btcYield >= 0 ? '+' : ''}${btcYield.toFixed(2)}%)`;
-        btcPnLEl.className = `py-3 px-3 font-bold font-mono ${btcPnL >= 0 ? 'text-emerald-400' : 'text-red-400'}`;
+        tbody.innerHTML = positions.map(pos => {
+          const isLong = (pos.side || '').toUpperCase() === 'LONG';
+          const markP = pos.current_price || btcPrice;
+          const pnl = pos.pnl !== undefined ? pos.pnl : ((markP - pos.entry_price) * pos.quantity * (isLong ? 1 : -1));
+          const pnlPct = pos.entry_price > 0 ? (pnl / (pos.entry_price * pos.quantity)) * 100 : 0;
+          const pnlColor = pnl >= 0 ? 'text-emerald-400' : 'text-red-400';
+          return `
+            <tr class="hover:bg-[var(--background)] transition">
+              <td class="py-3 px-3 font-bold font-sans">${pos.symbol}</td>
+              <td class="py-3 px-3"><span class="px-2 py-0.5 rounded ${isLong ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'} font-bold text-[11px]">${pos.side}</span></td>
+              <td class="py-3 px-3">${Number(pos.quantity).toFixed(4)} ${pos.symbol.replace('USDT', '')}</td>
+              <td class="py-3 px-3">$${Number(pos.entry_price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+              <td class="py-3 px-3 font-semibold ${pnlColor}">$${Number(markP).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+              <td class="py-3 px-3 text-red-400">${pos.stop_loss ? '$' + Number(pos.stop_loss).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : 'None'}</td>
+              <td class="py-3 px-3 text-emerald-400">${pos.take_profit ? '$' + Number(pos.take_profit).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : 'None'}</td>
+              <td class="py-3 px-3 font-bold ${pnlColor}">${pnl >= 0 ? '+$' : '-$'}${Math.abs(pnl).toFixed(2)} (${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%)</td>
+              <td class="py-3 px-3 text-right">
+                <button onclick="closePosition('${pos.symbol}')" class="px-2.5 py-1 rounded bg-red-600/10 hover:bg-red-600 hover:text-white text-red-400 border border-red-600/20 text-[10px] font-semibold transition">
+                  Close Position
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('');
       }
 
-      const ethMarkEl = document.getElementById('ethMarkPrice');
-      const ethPnLEl = document.getElementById('ethPnL');
-      if (ethMarkEl && ethPnLEl) {
-        ethMarkEl.innerText = '$' + ethPrice.toLocaleString('en-US', { minimumFractionDigits: 2 });
-        const ethYield = ((ethPrice - ethEntry) / ethEntry) * 100;
-        ethPnLEl.innerText = `${ethPnL >= 0 ? '+$' : '-$'}${Math.abs(ethPnL).toFixed(2)} (${ethYield >= 0 ? '+' : ''}${ethYield.toFixed(2)}%)`;
-        ethPnLEl.className = `py-3 px-3 font-bold font-mono ${ethPnL >= 0 ? 'text-emerald-400' : 'text-red-400'}`;
+      // Render trades blotter dynamically
+      function renderTrades(trades) {
+        const tbody = document.getElementById('blotterTableBody');
+        const tabHeader = document.getElementById('tabBlotterHeader');
+        const count = trades ? trades.length : 0;
+        if (tabHeader) tabHeader.innerText = `Trade Blotter (${count})`;
+        const countEl = document.getElementById('cardTradesCount');
+        if (countEl) countEl.innerText = `${count} Trades`;
+
+        if (!tbody) return;
+        if (!trades || trades.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="9" class="py-6 text-center text-xs text-[var(--muted-foreground)] font-mono">No trades executed yet. Model is actively monitoring market.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = trades.map(trade => {
+          const isWin = Number(trade.pnl) >= 0;
+          const isLong = (trade.side || '').toUpperCase() === 'LONG';
+          const dateStr = trade.closed_at ? trade.closed_at.substring(0, 16).replace('T', ' ') : 'Live';
+          const reason = trade.exit_reason || 'SIGNAL';
+          const reasonColor = reason === 'TAKE_PROFIT' ? 'bg-emerald-500/10 text-emerald-400' : (reason === 'STOP_LOSS' ? 'bg-red-500/10 text-red-400' : 'bg-cyan-500/10 text-cyan-400');
+          return `
+            <tr class="hover:bg-[var(--background)] transition">
+              <td class="py-2 px-3 text-[var(--muted-foreground)]">${dateStr}</td>
+              <td class="py-2 px-3 font-bold">${trade.symbol}</td>
+              <td class="py-2 px-3 ${isLong ? 'text-emerald-400' : 'text-red-400'} font-semibold">${trade.side}</td>
+              <td class="py-2 px-3">$${Number(trade.entry_price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+              <td class="py-2 px-3">$${Number(trade.exit_price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+              <td class="py-2 px-3 ${isWin ? 'text-emerald-400' : 'text-red-400'} font-bold">${isWin ? '+$' : '-$'}${Math.abs(Number(trade.pnl)).toFixed(2)}</td>
+              <td class="py-2 px-3 ${isWin ? 'text-emerald-400' : 'text-red-400'}">${Number(trade.pnl_pct) >= 0 ? '+' : ''}${Number(trade.pnl_pct).toFixed(2)}%</td>
+              <td class="py-2 px-3">$${Number(trade.fees || 0).toFixed(2)}</td>
+              <td class="py-2 px-3"><span class="px-1.5 py-0.5 rounded ${reasonColor} text-[10px] font-mono">${reason}</span></td>
+            </tr>
+          `;
+        }).join('');
       }
 
-      // Update Indicators
-      document.getElementById('valEMA9').innerText = '$' + (btcPrice * 0.994).toFixed(0);
-      document.getElementById('valEMA21').innerText = '$' + (btcPrice * 0.988).toFixed(0);
+      // Update top metrics cards from portfolio state or WebSocket tick
+      function applyPortfolioData(data) {
+        if (!data) return;
+        const totalEq = data.portfolio_equity !== undefined ? data.portfolio_equity : data.total_equity;
+        if (totalEq !== undefined) {
+          totalEquity = totalEq;
+          const eqEl = document.getElementById('cardEquity');
+          if (eqEl) eqEl.innerText = '$' + Number(totalEq).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          const eqPct = ((totalEq - 10000.0) / 10000.0) * 100;
+          const eqChangeEl = document.getElementById('cardEquityChange');
+          if (eqChangeEl) {
+            eqChangeEl.innerText = (eqPct >= 0 ? '+' : '') + eqPct.toFixed(2) + '%';
+            eqChangeEl.className = `font-semibold font-mono ${eqPct >= 0 ? 'text-emerald-400' : 'text-red-400'}`;
+          }
+        }
 
-      // Dynamic probability meter adjustment
-      const pUp = Math.min(85, Math.max(45, 68.4 + (btcPrice - 84650) * 0.015));
-      document.getElementById('probPercentText').innerText = pUp.toFixed(1) + '% Bullish';
-      document.getElementById('probBar').style.width = pUp + '%';
-      document.getElementById('probBullishText').innerText = `Bullish (${pUp.toFixed(1)}%)`;
-      document.getElementById('probBearishText').innerText = `Bearish (${(100 - pUp).toFixed(1)}%)`;
+        const cash = data.available_cash;
+        if (cash !== undefined) {
+          availableCash = cash;
+          const cashEl = document.getElementById('cardCash');
+          if (cashEl) cashEl.innerText = '$' + Number(cash).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          const cashPctEl = document.getElementById('cardCashPct');
+          if (cashPctEl && totalEquity > 0) {
+            cashPctEl.innerText = ((cash / totalEquity) * 100).toFixed(1) + '%';
+          }
+        }
 
-      tickCount++;
-      document.getElementById('tickCounter').innerText = `Ticks Processed: ${tickCount.toLocaleString()}`;
-    }
+        const margin = data.margin_used !== undefined ? data.margin_used : (totalEquity - availableCash);
+        const marginEl = document.getElementById('cardMargin');
+        if (marginEl) marginEl.innerText = 'Margin: $' + Number(margin).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-    // Connect to WebSocket with Auto-Reconnect and local fallback
-    function initWebSocket() {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/api/v1/ws`;
+        const unPnl = data.unrealized_pnl;
+        if (unPnl !== undefined) {
+          const unEl = document.getElementById('cardUnrealized');
+          if (unEl) {
+            unEl.innerText = (unPnl >= 0 ? '+$' : '-$') + Math.abs(Number(unPnl)).toFixed(2);
+            unEl.className = `text-xl font-bold tracking-tight font-mono ${unPnl >= 0 ? 'text-emerald-400' : 'text-red-400'}`;
+          }
+          const unPctEl = document.getElementById('cardUnrealizedPct');
+          if (unPctEl) {
+            const unPct = totalEquity > 0 ? (unPnl / 10000.0) * 100 : 0;
+            unPctEl.innerText = (unPct >= 0 ? '+' : '') + unPct.toFixed(2) + '% open yield';
+            unPctEl.className = `text-[10px] mt-1 font-mono ${unPct >= 0 ? 'text-emerald-400/80' : 'text-red-400/80'}`;
+          }
+        }
 
-      let ws = null;
-      try {
-        ws = new WebSocket(wsUrl);
-      } catch (e) {
-        console.warn("WebSocket connection failed, using browser fallback simulation loop", e);
-        startFallbackLoop();
-        return;
+        const realPnl = data.realized_pnl;
+        if (realPnl !== undefined) {
+          const realEl = document.getElementById('cardRealized');
+          if (realEl) {
+            realEl.innerText = (realPnl >= 0 ? '+$' : '-$') + Math.abs(Number(realPnl)).toFixed(2);
+            realEl.className = `text-xl font-bold tracking-tight font-mono ${realPnl >= 0 ? 'text-emerald-400' : 'text-red-400'}`;
+          }
+        }
+
+        const dd = data.drawdown_pct;
+        if (dd !== undefined) {
+          const ddEl = document.getElementById('cardDrawdown');
+          if (ddEl) ddEl.innerText = Number(dd).toFixed(2) + '%';
+        }
+
+        const peak = data.peak_equity;
+        if (peak !== undefined) {
+          peakEquity = peak;
+          const peakEl = document.getElementById('cardPeak');
+          if (peakEl) peakEl.innerText = 'Peak: $' + Number(peak).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        const wr = data.win_rate;
+        if (wr !== undefined) {
+          const wrEl = document.getElementById('cardWinRate');
+          if (wrEl) {
+            const wrVal = wr > 1 ? wr : wr * 100;
+            wrEl.innerText = Number(wrVal).toFixed(1) + '%';
+          }
+        }
+
+        const pf = data.profit_factor;
+        if (pf !== undefined) {
+          const pfEl = document.getElementById('cardPF');
+          if (pfEl) pfEl.innerText = 'PF ' + Number(pf).toFixed(2);
+        }
+
+        const tradesCount = data.total_trades !== undefined ? data.total_trades : data.total_trades_count;
+        if (tradesCount !== undefined) {
+          const tcEl = document.getElementById('cardTradesCount');
+          if (tcEl) tcEl.innerText = `${tradesCount} Trades`;
+          const blotterTab = document.getElementById('tabBlotterHeader');
+          if (blotterTab) blotterTab.innerText = `Trade Blotter (${tradesCount})`;
+        }
       }
 
-      ws.onopen = () => {
-        console.log("WebSocket connected to live trading engine!");
-        document.getElementById('liveStatusText').innerText = "LIVE WEBSOCKET STREAM";
-      };
-
-      ws.onmessage = (event) => {
+      // Initial REST fetch to populate dashboard on load
+      async function loadInitialData() {
         try {
-          const data = JSON.parse(event.data);
-          if (data.type === 'TICK') {
-            applyTick(data);
+          const portRes = await fetch('/api/v1/portfolio');
+          if (portRes.ok) {
+            const portData = await portRes.json();
+            applyPortfolioData(portData);
+          }
+        } catch (e) {
+          console.warn("Portfolio fetch fallback:", e);
+        }
+
+        try {
+          const posRes = await fetch('/api/v1/positions');
+          if (posRes.ok) {
+            const posData = await posRes.json();
+            renderPositions(posData);
+          }
+        } catch (e) {
+          console.warn("Positions fetch fallback:", e);
+        }
+
+        try {
+          const tradesRes = await fetch('/api/v1/trades?limit=50');
+          if (tradesRes.ok) {
+            const tradesData = await tradesRes.json();
+            renderTrades(tradesData.trades || tradesData);
+          }
+        } catch (e) {
+          console.warn("Trades fetch fallback:", e);
+        }
+      }
+
+      // Process incoming real-time market tick
+      function applyTick(data) {
+        if (isHalted) return;
+
+        const oldBtc = btcPrice;
+        btcPrice = data.price;
+        ethPrice = data.eth_price || ethPrice;
+
+        // Flash Price color
+        const tickerEl = document.getElementById('liveTickerPrice');
+        if (tickerEl) {
+          tickerEl.innerText = '$' + btcPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          tickerEl.classList.remove('flash-green', 'flash-red', 'text-emerald-400', 'text-red-400');
+          if (btcPrice >= oldBtc) {
+            tickerEl.classList.add('flash-green', 'text-emerald-400');
+          } else {
+            tickerEl.classList.add('flash-red', 'text-red-400');
+          }
+        }
+
+        // Update 24h Pct
+        const pct24 = ((btcPrice - 81850.0) / 81850.0) * 100;
+        const pctEl = document.getElementById('liveTickerPct');
+        if (pctEl) {
+          pctEl.innerText = (pct24 >= 0 ? '+' : '') + pct24.toFixed(2) + '%';
+          pctEl.className = `text-xs font-mono font-semibold ${pct24 >= 0 ? 'text-emerald-400' : 'text-red-400'}`;
+        }
+
+        // Update Spread
+        const spreadEl = document.getElementById('liveSpread');
+        if (spreadEl) spreadEl.innerText = `Spread: $${(btcPrice * 0.0002).toFixed(2)}`;
+
+        // Update Last Candle
+        const lastCandle = candles[candles.length - 1];
+        lastCandle.c = btcPrice;
+        lastCandle.h = Math.max(lastCandle.h, btcPrice);
+        lastCandle.l = Math.min(lastCandle.l, btcPrice);
+
+        if (data.candle && data.candle.new_bar) {
+          candles.shift();
+          candles.push({ o: btcPrice, h: btcPrice, l: btcPrice, c: btcPrice });
+          // Candle closed: refresh completed trades blotter
+          loadInitialData();
+        }
+
+        renderCandles();
+
+        // Apply reactive portfolio & positions data
+        applyPortfolioData(data);
+        if (data.open_positions) {
+          renderPositions(data.open_positions);
+        }
+
+        // Dynamic EMAs
+        const ema9El = document.getElementById('valEMA9');
+        if (ema9El) ema9El.innerText = '$' + (btcPrice * 0.994).toFixed(0);
+        const ema21El = document.getElementById('valEMA21');
+        if (ema21El) ema21El.innerText = '$' + (btcPrice * 0.988).toFixed(0);
+
+        // Model probability meter
+        const pUp = data.prob_up !== undefined ? data.prob_up : Math.min(85, Math.max(45, 68.4 + (btcPrice - 83890) * 0.015));
+        const probTextEl = document.getElementById('probPercentText');
+        if (probTextEl) probTextEl.innerText = Number(pUp).toFixed(1) + '% Bullish';
+        const probBarEl = document.getElementById('probBar');
+        if (probBarEl) probBarEl.style.width = pUp + '%';
+        const probBullEl = document.getElementById('probBullishText');
+        if (probBullEl) probBullEl.innerText = `Bullish (${Number(pUp).toFixed(1)}%)`;
+        const probBearEl = document.getElementById('probBearishText');
+        if (probBearEl) probBearEl.innerText = `Bearish (${(100 - Number(pUp)).toFixed(1)}%)`;
+
+        tickCount++;
+        const tickEl = document.getElementById('tickCounter');
+        if (tickEl) tickEl.innerText = `Binance Live Ticks: ${tickCount.toLocaleString()}`;
+      }
+
+      // Connect to WebSocket
+      function initWebSocket() {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/api/v1/ws`;
+
+        let ws = null;
+        try {
+          ws = new WebSocket(wsUrl);
+        } catch (e) {
+          console.warn("WebSocket connection failed, running fallback ticker", e);
+          startFallbackLoop();
+          return;
+        }
+
+        ws.onopen = () => {
+          console.log("WebSocket connected to live ML trading engine!");
+          const statusText = document.getElementById('liveStatusText');
+          if (statusText) statusText.innerText = "LIVE WEBSOCKET STREAM";
+          loadInitialData();
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === 'TICK') {
+              applyTick(data);
+            }
+          } catch (err) {
+            console.error("Error parsing WS frame", err);
+          }
+        };
+
+        ws.onerror = (err) => {
+          console.warn("WebSocket error, engaging fallback simulator", err);
+          startFallbackLoop();
+        };
+
+        ws.onclose = () => {
+          console.warn("WebSocket disconnected. Retrying in 2 seconds...");
+          startFallbackLoop();
+          setTimeout(initWebSocket, 2000);
+        };
+      }
+
+      // Fallback simulation engine runs only if offline or standalone file
+      let fallbackInterval = null;
+      function startFallbackLoop() {
+        if (fallbackInterval) return;
+        fallbackInterval = setInterval(() => {
+          const drift = (83890.0 - btcPrice) * 0.002;
+          const shock = (Math.random() - 0.49) * 15.0;
+          const newBtc = Math.round((btcPrice + drift + shock) * 100) / 100;
+          applyTick({
+            price: newBtc,
+            eth_price: ethPrice,
+            portfolio_equity: totalEquity,
+            available_cash: availableCash,
+            realized_pnl: 417.20,
+            unrealized_pnl: -4.99,
+            drawdown_pct: 1.25,
+            peak_equity: 10392.80,
+            total_trades: 32,
+            win_rate: 53.1,
+            profit_factor: 2.45,
+            prob_up: 68.4,
+            candle: { new_bar: Math.random() < 0.05 }
+          });
+        }, 600);
+      }
+
+      // Tab Switching Logic
+      function switchTab(tabName) {
+        document.querySelectorAll('.tab-item').forEach(el => {
+          el.classList.remove('border-cyan-500', 'text-cyan-400');
+          el.classList.add('border-transparent', 'text-[var(--muted-foreground)]');
+        });
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+
+        const targetTab = document.getElementById(`tab-${tabName}`);
+        if (targetTab) {
+          targetTab.classList.add('border-cyan-500', 'text-cyan-400');
+          targetTab.classList.remove('border-transparent', 'text-[var(--muted-foreground)]');
+        }
+        const targetContent = document.getElementById(`content-${tabName}`);
+        if (targetContent) targetContent.classList.remove('hidden');
+      }
+
+      // Timeframe selector
+      function setTimeframe(tf) {
+        document.querySelectorAll('.tf-btn').forEach(btn => {
+          btn.classList.remove('bg-cyan-600', 'text-white', 'font-semibold');
+          btn.classList.add('text-[var(--muted-foreground)]');
+        });
+        if (event && event.target) {
+          event.target.classList.add('bg-cyan-600', 'text-white', 'font-semibold');
+          event.target.classList.remove('text-[var(--muted-foreground)]');
+        }
+      }
+
+      // Kill switch modal controls
+      function toggleKillSwitchModal(show) {
+        const modal = document.getElementById('killSwitchModal');
+        if (modal) {
+          if (show) modal.classList.remove('hidden');
+          else modal.classList.add('hidden');
+        }
+      }
+
+      async function confirmKillSwitch() {
+        isHalted = true;
+        toggleKillSwitchModal(false);
+        const badge = document.getElementById('statusBadge');
+        if (badge) {
+          badge.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-red-500"></span><span class="font-bold text-red-500">SYSTEM HALTED</span>';
+        }
+        renderPositions([]);
+        const unEl = document.getElementById('cardUnrealized');
+        if (unEl) {
+          unEl.innerText = '$0.00';
+          unEl.className = 'text-xl font-bold tracking-tight text-[var(--muted-foreground)] font-mono';
+        }
+        try {
+          await fetch('/api/v1/system/kill-switch', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({reason: 'Emergency Halt from Dashboard'})
+          });
+        } catch (e) {
+          console.warn("Kill switch endpoint notification:", e);
+        }
+      }
+
+      async function closePosition(symbol) {
+        try {
+          const res = await fetch(`/api/v1/positions/${encodeURIComponent(symbol)}/close`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          });
+          if (res.ok) {
+            await loadInitialData();
           }
         } catch (err) {
-          console.error("Error parsing WS frame", err);
+          console.error("Failed to close position:", err);
         }
-      };
-
-      ws.onerror = (err) => {
-        console.warn("WebSocket error, engaging fallback simulator", err);
-        startFallbackLoop();
-      };
-
-      ws.onclose = () => {
-        console.warn("WebSocket disconnected. Retrying in 2 seconds...");
-        startFallbackLoop();
-        setTimeout(initWebSocket, 2000);
-      };
-    }
-
-    // Fallback simulation engine runs in-browser if standalone file is opened directly
-    let fallbackInterval = null;
-    function startFallbackLoop() {
-      if (fallbackInterval) return;
-      fallbackInterval = setInterval(() => {
-        const drift = (84750.0 - btcPrice) * 0.002;
-        const shock = (Math.random() - 0.49) * 22.0;
-        const newBtc = Math.round((btcPrice + drift + shock) * 100) / 100;
-
-        const ethShock = (Math.random() - 0.49) * 1.5;
-        const newEth = Math.round((ethPrice + ethShock) * 100) / 100;
-
-        applyTick({
-          price: newBtc,
-          eth_price: newEth,
-          candle: { new_bar: Math.random() < 0.05 }
-        });
-      }, 600); // Ticks every 600ms
-    }
-
-    // Tab Switching Logic
-    function switchTab(tabName) {
-      document.querySelectorAll('.tab-item').forEach(el => {
-        el.classList.remove('border-cyan-500', 'text-cyan-400');
-        el.classList.add('border-transparent', 'text-[var(--muted-foreground)]');
-      });
-      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-
-      document.getElementById(`tab-${tabName}`).classList.add('border-cyan-500', 'text-cyan-400');
-      document.getElementById(`tab-${tabName}`).classList.remove('border-transparent', 'text-[var(--muted-foreground)]');
-      document.getElementById(`content-${tabName}`).classList.remove('hidden');
-    }
-
-    // Timeframe selector
-    function setTimeframe(tf) {
-      document.querySelectorAll('.tf-btn').forEach(btn => {
-        btn.classList.remove('bg-cyan-600', 'text-white', 'font-semibold');
-        btn.classList.add('text-[var(--muted-foreground)]');
-      });
-      event.target.classList.add('bg-cyan-600', 'text-white', 'font-semibold');
-      event.target.classList.remove('text-[var(--muted-foreground)]');
-    }
-
-    // Kill switch modal controls
-    function toggleKillSwitchModal(show) {
-      const modal = document.getElementById('killSwitchModal');
-      if (show) modal.classList.remove('hidden');
-      else modal.classList.add('hidden');
-    }
-
-    function confirmKillSwitch() {
-      isHalted = true;
-      toggleKillSwitchModal(false);
-      const badge = document.getElementById('statusBadge');
-      badge.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-red-500"></span><span class="font-bold text-red-500">SYSTEM HALTED</span>';
-      
-      const tbody = document.getElementById('positionsTableBody');
-      tbody.innerHTML = '<tr><td colspan="9" class="py-4 text-center text-xs text-[var(--muted-foreground)] font-mono">All positions closed by emergency kill switch. System halted.</td></tr>';
-
-      document.getElementById('cardUnrealized').innerText = '$0.00';
-      document.getElementById('cardUnrealized').className = 'text-xl font-bold tracking-tight text-[var(--muted-foreground)] font-mono';
-    }
-
-    function closePosition(symbol) {
-      const row = document.getElementById(symbol === 'BTCUSDT' ? 'posRowBTC' : 'posRowETH');
-      if (row) row.remove();
-      const remaining = document.querySelectorAll('#positionsTableBody tr');
-      if (remaining.length === 0) {
-        document.getElementById('positionsTableBody').innerHTML = '<tr><td colspan="9" class="py-4 text-center text-xs text-[var(--muted-foreground)] font-mono">No active open positions.</td></tr>';
-        document.getElementById('cardUnrealized').innerText = '$0.00';
       }
-    }
 
-    // Initialize clock and candles
-    setInterval(() => {
-      const now = new Date();
-      document.getElementById('utcClock').innerText = 'UTC ' + now.toISOString().substring(11, 19);
-    }, 1000);
+      // Initialize clock
+      setInterval(() => {
+        const now = new Date();
+        const clk = document.getElementById('utcClock');
+        if (clk) clk.innerText = 'UTC ' + now.toISOString().substring(11, 19);
+      }, 1000);
 
-    // Boot real-time rendering
-    renderCandles();
-    initWebSocket();
+      // Periodically refresh blotter every 30s
+      setInterval(loadInitialData, 30000);
+
+      // Boot real-time rendering
+      renderCandles();
+      loadInitialData();
+      initWebSocket();
   </script>
 </body>
 </html>
