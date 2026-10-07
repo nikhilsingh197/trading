@@ -116,3 +116,6 @@ ignore_missing_imports = true
 asyncio_mode = "auto"
 testpaths = ["tests"]
 addopts = "--tb=short -q"
+
+[tool.vercel]
+entrypoint = "ai_crypto_trader.api.main:app"
